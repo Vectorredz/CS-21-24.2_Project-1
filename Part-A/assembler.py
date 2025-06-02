@@ -1,5 +1,6 @@
 from typing import Callable
 from pathlib import Path
+from sys import argv
 
 type InstEncoder = Callable
 
@@ -9,25 +10,24 @@ def new(name: str):
     def _new(f: InstEncoder):
         instruction_map[name] = f
     return _new
-def fix_width(num: str, digits: int): #sign extends
+def fix_width(num: str, digits: int, ext: str): #sign extends
     assert len(num) <= digits
-    return (num[0] * (len(num)-digits)) + num
-def to_bin(num: str, digits: int):
-    return fix_width(bin(int(num))[2:], digits)
-def to_dec(num: str, digits: int):
-    return fix_width(num, digits)
+    return (ext * (digits-len(num))) + num
+def to_bin(num: str, digits: int, sign_extend: bool = True):
+    num = bin(int(num))[2:]
+    return fix_width(num, digits, num[0] if sign_extend else "0")
 
 
-@new("rot_r")
+@new("rot-r")
 def _(): return "00000000"
 
-@new("rot_l")
+@new("rot-l")
 def _(): return "00000001"
 
-@new("rot_rc")
+@new("rot-rc")
 def _(): return "00000010"
 
-@new("rot_lc")
+@new("rot-lc")
 def _(): return "00000011"
 
 @new("from-mba")
@@ -68,11 +68,15 @@ def _(): return "00001111"
 
 @new("inc*-reg")
 def _(reg):
-    return f"0001{to_bin(reg, 3)}0"
+    reg = fix_width(reg, 3, "0")
+    assert reg in ("000", "001", "010", "011", "100")
+    return f"0001{reg}0"
 
 @new("dec*-reg")
 def _(reg):
-    return f"0001{to_bin(reg, 3)}1"
+    reg = fix_width(reg, 3, "0")
+    assert reg in ("000", "001", "010", "011", "100")
+    return f"0001{reg}1"
 
 @new("and-ba")
 def _(): return "00011010"
@@ -94,11 +98,15 @@ def _(): return "00011111"
 
 @new("to-reg")
 def _(reg):
-    return f"0010{to_bin(reg, 3)}0"
+    reg = fix_width(reg, 3, "0")
+    assert reg in ("000", "001", "010", "011", "100")
+    return f"0010{reg}0"
 
 @new("from-reg")
 def _(reg):
-    return f"0010{to_bin(reg, 3)}1"
+    reg = fix_width(reg, 3, "0")
+    assert reg in ("000", "001", "010", "011", "100")
+    return f"0010{reg}1"
 
 @new("clr-cf")
 def _(): return "00101010"
@@ -246,10 +254,10 @@ def _(imm):
 # ======================================================
 
 @new("acc")
-def _(imm): return f"0111{to_dec(imm, 4)}"
+def _(imm): return f"0111{to_bin(imm, 4)}"
 
 @new("b-bit")
-def _(k, imm): return f"100{to_dec(k, 2)}{to_bin(imm, 11)}"
+def _(k, imm): return f"100{to_bin(k, 2)}{to_bin(imm, 11)}"
 
 @new("bnz-a")
 def _(imm): return f"10100{to_bin(imm, 11)}"
@@ -302,24 +310,30 @@ instruction_map[tokens[0]](tokens[1:])
 '''
 # ==============================  Reading from ASM File
 
+# read lines and convert to machine code
+# TODO: Implement command line arguments for filename and bin/hex
+
 output_lines: list[str] = []
 initial_file = open(Path("Arch242_example_code.asm"), "r") # Change filename to final
 while True:
     line: str = initial_file.readline()
     if not line: break
 
+    line = line.rstrip()
     tokens = line.split(" ")
     machine_code = instruction_map[tokens[0]](*tokens[1:])
     assert len(machine_code) in (8, 16)
 
     output_lines.append(machine_code)
 
-binary = True
-if not binary:
+# check if binary
+bin_or_hex = "bin"
+assert bin_or_hex in ("bin", "hex")
+if bin_or_hex == 'hex':
     output_lines = [hex(int(line))[2:] for line in output_lines]
 
-# writes to destination ASM fil
-destination_file = open(Path("Arch242_output_file.asm"), 'w')
-while True:
-    for line in output_lines:
-        destination_file.write(line)
+# writes to destination ASM file
+destination_file = open(Path("Arch242_output_file.asm"), 'w+')
+
+for line in output_lines:
+    destination_file.write(line+"\n")

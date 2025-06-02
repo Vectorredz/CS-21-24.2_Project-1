@@ -1,3 +1,3 @@
 rot-r
 rot-l
-dec*-reg 001
+dec*-reg 010
