@@ -21,16 +21,23 @@ def _(value):
     v2 = f"0x{value[-1]}"
     v1, v2 = int(v1), int(v2)
 
-    # MEM[mem_target] = v1, MEM[mem_target+1] = v2
     # TODO check if memory is 4-bit data per address (currently) instead of 8-bit data
     assert mem_target < mem_cap-2
     encoded = [
+        # MEM[mem_target] = v1
         f"rarb {mem_target}",
         f"acc {v1}",
         "to-mba",
+
+        # MEM[mem_target+1] = v2
         f"rarb {mem_target+1}",
         f"acc {v2}",
-        "to-mba"
+        "to-mba",
+
+        # clear register values
+        "acc 0",
+        "to-reg 0",
+        "to-reg 1"
     ]
     mem_target += 2
     return encoded
