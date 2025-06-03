@@ -23,6 +23,7 @@ def _(value):
 
     # MEM[mem_target] = v1, MEM[mem_target+1] = v2
     # TODO check if memory is 4-bit data per address (currently) instead of 8-bit data
+    assert mem_target < mem_cap-2
     encoded = [
         f"rarb {mem_target}",
         f"acc {v1}",
@@ -32,5 +33,4 @@ def _(value):
         "to-mba"
     ]
     mem_target += 2
-    assert mem_target < mem_cap
     return encoded
