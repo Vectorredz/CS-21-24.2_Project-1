@@ -33,7 +33,6 @@ class DataMemory:
         self.Data = [] * size
         # --- a 1D array of data memory
     
-
 class InstrMemory:
     def __init__(self, size=2**INSTR_BITS):
         self.Instr = [] * size
@@ -91,11 +90,32 @@ class Processor:
                 self._type1(decoded_instr.val)
             case "Type2":
                 self._type2(decoded_instr.val)
+            case "Type3":
+                self._type3(decoded_instr.val)
+            case "Type4":
+                self._type4(decoded_instr.val)
+            case "Type5":
+                self._type5(decoded_instr.val)
+            case "Type6":
+                self._type6(decoded_instr.val)
+            case "Type7":
+                self._type7(decoded_instr.val)
+            case "Type8":
+                self._type8(decoded_instr.val)
+            case "Type9":
+                self._type9(decoded_instr.val)
+            case "Type10":
+                self._type10(decoded_instr.val)
+            case "Type11":
+                self._type11(decoded_instr.val)
+            case "Type12":
+                self._type12(decoded_instr.val)
+            case "Type13":
+                self._type13(decoded_instr.val)
 
     def _overflow(self, sum):
         mask = 0b100000000
         return mask & sum
-    
 
     # instructions 1 - 16
     def _type1(self, instr):
@@ -161,5 +181,30 @@ class Processor:
             self.DataMemory[rdrc] = self.DataMemory[rdrc] - 1
         
         self.PC.val += 1
+    
+    def _type2(self, instr):
+        ...
+    def _type3(self, instr):
+        ...
+    def _type4(self, instr):
+        ...
+    def _type5(self, instr):
+        ...
+    def _type6(self, instr):
+        ...
+    def _type7(self, instr):
+        ...
+    def _type8(self, instr):
+        ...
+    def _type9(self, instr):
+        ...
+    def _type10(self, instr):
+        ...
+    def _type11(self, instr):
+        ...
+    def _type12(self, instr):
+        ...
+    def _type13(self, instr):
+        ...
   
 Processor()
