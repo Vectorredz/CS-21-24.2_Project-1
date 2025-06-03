@@ -1,0 +1,275 @@
+from typing import Callable
+from pathlib import Path
+from sys import argv
+
+type InstEncoder = Callable
+
+instruction_map: dict[str, Callable] = {}
+
+registers = ["000", "001", "010", "O11", "100"]
+opcodes = ["0001", "0010"]
+branches = {
+    "bnz-a" : "10100",
+    "bnz-b" : "10101",
+    "beqz" : "10110",
+    "bnez" : "10111",
+    "beqz-cf" : "11000",
+    "bnez-cf" : "11001",
+    "b-timer" : "11010",
+    "bnz-d" : "11011"
+}
+instr_type = {
+    "0000": "Type1",
+    "0001": "Type2",
+    "0011": "Type3",
+    "0100": "Type4",
+    "0101": "Type5",
+    "0111": "Type6",
+    "100X": "Type7",
+    "1010": "Type8",
+    "1011": "Type9",
+    "1100": "Type10",
+    "1101": "Type11",
+    "1110": "Type12",
+    "1111": "Type13"
+}
+
+immediates_4 = [f"{i:04b}" for i in range(2**4)]
+immediates_11 = [f"{i:011b}" for i in range(2**11)]
+immediates_12 = [f"{i:012b}" for i in range(2**12)]
+immediates_k = [f"{i:02b}" for i in range(2**2)]
+arithmetic = {
+    "add" : "010000000000",
+    "sub" : "010000010000",
+    "and" : "010000100000",
+    "xor" : "010000110000",
+    "or" : "010001000000",
+    "r4" : "010001100000",
+    "timer" : "010001110000"
+ }
+
+def dasm(code: str):
+    def _dasm(f: Callable):
+        instruction_map[code] = f
+        return f
+    return _dasm
+
+# ======================================================
+
+# A-TYPE
+
+#         0000 00XX -> Rotate
+# OPCODE: 0000 00
+
+@dasm("00000000")
+def _(): return "rot-r"
+
+@dasm("00000001")
+def _(): return "rot-l"
+
+@dasm("00000010")
+def _(): return "rot-rc"
+
+@dasm("00000011")
+def _(): return "rot-lc"
+
+#          0000 01XX -> ACC load & store
+# OPCODE:  0000 01
+
+@dasm("00000100")
+def _(): return "from-mba"
+
+@dasm("00000101")
+def _(): return "to-mba"
+
+@dasm("00000110")
+def _(): return "from-mdc"
+
+@dasm("00000111")
+def _(): return "to-mdc"
+
+#          0000 1XXX -> ACC arithmetic
+# OPCODE:  0000 1X
+
+@dasm("00001000")
+def _(): return "addc-mba"
+
+@dasm("00001001")
+def _(): return "add-mba"
+
+@dasm("00001010")
+def _(): return "subc-mba"
+
+@dasm("00001011")
+def _(): return "sub-mba"
+
+@dasm("00001100")
+def _(): return "inc*-mba"
+
+@dasm("00001101")
+def _(): return "dec*-mba"
+
+@dasm("00001110")
+def _(): return "inc*-mdc"
+
+@dasm("00001111")
+def _(): return "dec*-mdc"
+
+# ======================================================
+
+            # R-TYPE            # S-TYPE
+# --- inc*-reg, dec*-reg and to-reg, from-reg
+def localizer(binary, opcode, op, reg):
+    @dasm(binary)
+    def _(): 
+        if opcode == "0001":
+            return f"inc*-reg {reg}" if op == 0 else f"dec*-reg {reg}"
+        elif opcode == "0010":
+            return f"to-reg {reg}" if op == 0 else f"from-reg {reg}"
+
+for opcode in opcodes:
+    for op in range(2):
+        for reg in registers:
+            localizer(f"{opcode}{reg}{op}", opcode, op, reg)
+
+# ======================================================
+
+# A-TYPE
+
+# --- ACC logical
+
+@dasm("00011010")
+def _(): return "and-ba"
+
+@dasm("00011011")
+def _(): return "xor-ba"
+
+@dasm("00011100")
+def _(): return "or-ba"
+
+@dasm("00011101")
+def _(): return "and*-mba"
+
+@dasm("00011110")
+def _(): return "xor*-mba"
+
+@dasm("00011111")
+def _(): return "or*-mba"
+
+# ======================================================
+
+@dasm("00101010")
+def _(): return "clr-cf"
+
+@dasm("00101011")
+def _(): return "set-cf"
+
+@dasm("00101100")
+def _(): return "set-ei"
+
+@dasm("00101101")
+def _(): return "clr-ei"
+
+@dasm("00101110")
+def _(): return "ret"
+
+@dasm("00101111")
+def _(): return "retc"
+
+@dasm("00110000")
+def _(): return "from-pa"
+
+@dasm("00110001")
+def _(): return "inc"
+
+@dasm("00110010")
+def _(): return "to-ioa"
+
+@dasm("00110011")
+def _(): return "to-iob"
+
+@dasm("00110100")
+def _(): return "to-ioc"
+
+@dasm("00110110")
+def _(): return "bcd"
+
+@dasm("0011011100111110")
+def _(): return "shutdown"
+
+@dasm("00111000")
+def _(): return "timer-start"
+
+@dasm("00111001")
+def _(): return "timer-end"
+
+@dasm("00111010")
+def _(): return "from-timerl"
+
+@dasm("00111011")
+def _(): return "from-timerh"
+
+@dasm("00111100")
+def _(): return "to-timerl"
+
+@dasm("00111101")
+def _(): return "to-timerh"
+
+@dasm("00111110")
+def _(): return "nop"
+
+@dasm("00111111")
+def _(): return "dec"
+
+# ======================================================
+
+# --- immediates
+def localizer(binary, ar, imm):
+    @dasm(binary)
+    def _(): 
+        return f"{ar} {imm}"
+        
+for ar in arithmetic.keys():
+    for imm in immediates_4:
+        binary = f"{arithmetic[ar]}{imm}"
+        localizer(binary, ar, imm)
+
+# ======================================================
+
+# TODO --- nops (nakakatamad)
+# TODO --- RARBS
+
+# ======================================================
+
+# --- acc
+def localizer(binary,imm):
+    @dasm(binary)
+    def _(): 
+        return f"acc {imm}"
+        
+for imm in immediates_4:
+    binary = f"0111{imm}"
+    localizer(binary, imm)
+
+# -- b-bit
+
+def localizer(binary, k, imm):
+    @dasm(binary)
+    def _(): 
+        return f"b-bit {k}{imm}"
+        
+for k in immediates_k:
+    for imm in immediates_11:
+        binary = f"100{k}{imm}"
+        localizer(binary, k, imm)
+
+# --- branch
+def localizer(binary, branch, imm):
+    @dasm(binary)
+    def _(): 
+        return f"{branch} {imm}"
+        
+for branch in branches.keys():
+    for imm in immediates_11:
+        binary = f"{branches[branch]}{imm}"
+        localizer(binary, branch, imm)

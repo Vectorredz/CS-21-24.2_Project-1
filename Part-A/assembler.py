@@ -3,7 +3,6 @@ from sys import argv
 from asm_instructions import instruction_map
 from asm_directives import directive_map
 
-
 # ==============================  Reading from ASM File
 
 # read lines and convert to machine code

@@ -3,7 +3,8 @@ from asm_utils import fix_width, to_bin
 
 type DirEncoder = Callable
 
-directive_map = dict[str, DirEncoder] = {}
+directive_map: dict[str, DirEncoder] = {}
+
 def new_d(name: str):
     def _new(f: DirEncoder):
         directive_map[name] = f
