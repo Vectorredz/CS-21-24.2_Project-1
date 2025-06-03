@@ -76,6 +76,7 @@ class Processor:
     
     def decode(self, instr):
         fetched = dasm.instruction_map[instr]()
+
         if len(instr) == INSTR_8:
             typebits = instr[:4] # read from the left
             bin_instr = int(instr, 2)
@@ -115,7 +116,13 @@ class Processor:
 
     def _overflow(self, sum):
         mask = 0b100000000
-        return mask & sum
+        return bool(mask & sum)
+
+    def _underflow(self, sum):
+        # if msb is 1 there is an underflow
+        # a < b
+        mask = 0b10000000
+        return bool(mask & sum)
 
     # instructions 1 - 16
     def _type1(self, instr):
@@ -162,11 +169,11 @@ class Processor:
 
         elif instr == 0b00001010: # 11. subc-mba
             sum = self.ACC + self.DataMemory[rbra] - self.CF
-            self.CF = self._overflow(sum)
+            self.CF = self._underflow(sum)
 
         elif instr == 0b00001011: # 12. sub-mba
             sum = self.ACC - self.DataMemory[rbra]
-            self.CF = self._overflow(sum)
+            self.CF = self._underflow(sum)
 
         elif instr == 0b00001100: # 13. inc*-mba
             self.DataMemory[rbra] = self.DataMemory[rbra] + 1
@@ -182,28 +189,51 @@ class Processor:
         
         self.PC.val += 1
     
+    # instructions 17 - 24
     def _type2(self, instr):
         ...
+
+    # instructions 25 - 48
     def _type3(self, instr):
         ...
+
+    # instructions 49 - 64
     def _type4(self, instr):
         ...
+    
+    # instructions 65 - 66
     def _type5(self, instr):
         ...
+    
+    # instructions 67
     def _type6(self, instr):
         ...
+
+    # instructions 68
     def _type7(self, instr):
         ...
+
+    # instructions 69 - 70
     def _type8(self, instr):
         ...
+    
+    # instructions 71 - 72
     def _type9(self, instr):
         ...
+    
+    # instructions 73 - 74
     def _type10(self, instr):
         ...
+
+    # instructions 75 - 76
     def _type11(self, instr):
         ...
+
+    # instructions 77
     def _type12(self, instr):
         ...
+
+    # instructions 78
     def _type13(self, instr):
         ...
   
