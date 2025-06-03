@@ -33,3 +33,4 @@ def _(value):
     ]
     mem_target += 2
     assert mem_target < mem_cap
+    return encoded
