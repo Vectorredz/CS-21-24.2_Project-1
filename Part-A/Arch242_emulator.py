@@ -1,14 +1,24 @@
-# TODO CHECK EVERY INSTRUCTIONS + 40-42 & 47
-
 from dataclasses import dataclass
 import disassembler as dasm
 import asm_utils as asm_u
 from pathlib import Path
+import pyxel
 import subprocess
 
+"""
+TODO:
+    - shutdown
+    - HUD
+    - test instructions
+
+"""
 INSTR_BITS = INSTR_16 = 16
 MEM_BITS = INSTR_8 = 8
 INSTR_4 = 4
+
+SCREEN_WIDTH = 200
+SCREEN_HEIGHT = 300
+DIM = 10
 PATH = "Arch242_output_file.asm"
 
 # MASKS
@@ -22,83 +32,135 @@ HEX_8L4 = 0x0F
 HEX_8U4 = 0xF0
 
 @dataclass
-# --- Register class
-class Register:
-    name: str
-    val: int
-
-@dataclass
-# --- flags to signal the processor of the ALU result
-class ALUFlag:
-    zero: int # ALU result == 0
-    sign: int # ALU most significant bit
-    of: int # ALU result cannot fit inside the 4-bit register
-    carry: int # ALU indicate when arithmetic carry or borrow is generated from MSB
-
-@dataclass
 class Instructions:
 # --- Instruction class
     type: str # last 4-bits 
     bin: str 
     dec: str
-    
+
+@dataclass
+class MatrixCell:
+    memAddr: int
+    mapbit: int
+    state: int
+
 class DataMemory:
     def __init__(self, size=2**MEM_BITS):
-        self.Data = [] * size
+        self.Data: list[int] = [] * size
         # --- a 1D array of data memory
     
 class InstrMemory:
     def __init__(self, size=2**INSTR_BITS):
-        self.Instruction = [] * size
+        self.Instruction: list[int] = [] * size
         # --- a 1D array of instruction memory
 
-class Processor:
-    def __init__(self):
-        # --- Special Register
-        self.PC = Register('PC', 0b0) # program counter // assume 16-bit
-        self.PA = Register('PA', 0b0)
-        self.SP = Register('SP', 0b0) # stack pointer
-        self.GP = Register('GP', 0b0) # global pointer
-        self.ACC = Register('ACC', 0b10000001) # accumulator
-        self.CFACC = Register('CFACC', 0b0) # carry flag : accumulator 
-        self.CF = Register('CF', 0b0) # carry flag
-        self.EI = Register('EI', 0b0) # enable interrupts
-        self.TEMP = Register('TEMP', 0b0) # temp // assume 16-bit
-        self.TIMER = Register('TIMER', 0b0) # timer
-         
-        # --- General Purpose Registers && I/O Registers
-        reg_names = ['RA','RB','RC','RD','RE','RF', 'IOA', 'IOB', 'IOC']
-        self.RegFile = {name: Register(name, 0b0) for name in reg_names}
+class Pyxel:
+    def __init__(self, emulator: "Arch242Emulator"):
+        # --- Pyxel
+        self.screen_width = SCREEN_WIDTH
+        self.screen_height = SCREEN_HEIGHT
+        self.rows = 20
+        self.cols = 10
+        self.mem_addr = 192
+        self.emulator = emulator
+        pyxel.init(self.screen_width, self.screen_height, fps=30)
+        self._build_matrix()
+        pyxel.run(self.update, self.draw)
+
+    def _build_matrix(self):
+        mmio_addr = [data for data in range(192, 242)]
+        self.led_matrix = [[None for _ in range(self.cols)] for _ in range(self.rows)]
+        k = j = 0
+        for row in range(self.rows):
+            for col in range(self.cols):
+                cell = MatrixCell(mmio_addr[k], 2**(j % 4), 0)
+                self.led_matrix[row][col] = cell
+                if (j <= 2):
+                    j+=1
+                else: 
+                    k+=1
+                    j=0
+
+    def _write_cell(self, mem_addr, val):
+        for row in range(self.rows):
+            for col in range(self.cols):
+                cell = self.led_matrix[row][col]
+                if (cell.memAddr == mem_addr) & (cell.mapbit == val):
+                    self.led_matrix[row][col].state = 1
+
+    # def print_matrix(self):
+    #     for row in self.led_matrix:
+    #         print("".join("1" if cell.state else "0" for cell in row))  
+    def update(self):
+        self._write_cell(self.mem_addr, self.emulator.RegFile['IOA'])
+        self.emulator.clock_tick()
+      
+    def _draw_cell(self):
+        pyxel.rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0)
+
+        matrix_width = self.cols * DIM
+        matrix_height = self.rows * DIM
+
+        offset_x = (SCREEN_WIDTH - matrix_width) // 2
+        offset_y = (SCREEN_HEIGHT - matrix_height) // 2
+
+        for row in range(self.rows):
+            for col in range(self.cols):
+                x = offset_x + col * DIM
+                y = offset_y + row * DIM
+                color = 11 if self.led_matrix[row][col].state == 1 else 6
+                pyxel.rect(x, y, DIM - 1, DIM - 1, color)
+
+    def draw(self):
+        self._draw_cell()
+
+class Arch242Emulator: # CPU
+    def __init__(self):  
+        # # --- Special Registers,General Purpose Registers, I/O Registers
+        self.PC: int = 0
+        reg_names: list[int] = ['ACC', 'CF','TEMP','RA','RB','RC','RD','RE', 'IOA']
+        self.RegFile: dict[str, int] = {name: 0 for name in reg_names}
+        self.clock_cycle: int = 0
 
         self.DataMemory = DataMemory().Data
         self.InstrMemory = InstrMemory().Instruction
-
-        # cycle 1
-        self.clock_cycle()
-    
-    def clock_cycle(self):
-        self.instr = self.fetch()
-        self.decode()
         
-    def fetch(self):
+    def clock_tick(self):
+        # brief pause to start the game
+
+        self.load_instructions()
+        self.instr = self.fetch()
+        self.iohardware()
+        if (self.instr):
+            self.decode()
+            self.execute()
+        
+        self.clock_cycle += 1
+        
+        return
+    
+    def load_instructions(self):
         # Run the assembler first 
         subprocess.run(["python", Path("assembler.py")], check=True)
 
         with open(Path(PATH), "r") as f:
-            self.InstrMemory.append(f.readline().strip()) # remove newline
-
-        instruction = self.InstrMemory[self.PC.val] # get the memory from the current pc
-        return instruction
+            assembled = f.readlines()
+        
+        for instr in assembled:
+            self.InstrMemory.append(instr.strip())
+        return
+        
+    def fetch(self):
+        if (self.InstrMemory):
+            instruction = self.InstrMemory[self.PC] 
+            return instruction
     
     def decode(self):
-        # fetched = dasm.instruction_map[self.instr]() 
-
         typebits = self.instr[:4]
         typebits = "100X" if typebits == "1001" or typebits == "1000" else typebits
         type = dasm.instr_type[typebits]
             
         self.instr = Instructions(type, self.instr, int(asm_u.to_strbin(self.instr), 2))
-        self.execute()
         
     def execute(self): # alu
         match (self.instr.type):
@@ -131,6 +193,12 @@ class Processor:
             case "Type14":
                 self._type14()
 
+    def iohardware(self):
+        self.RegFile['IOA'] = self.RegFile['IOA'] | 0b0001 if pyxel.btn(pyxel.KEY_UP) else self.RegFile['IOA'] & 0b1110
+        self.RegFile['IOA'] = self.RegFile['IOA'] | 0b0010 if pyxel.btn(pyxel.KEY_DOWN) else self.RegFile['IOA'] & 0b1101
+        self.RegFile['IOA'] = self.RegFile['IOA'] | 0b0100 if pyxel.btn(pyxel.KEY_LEFT) else self.RegFile['IOA'] & 0b1011
+        self.RegFile['IOA'] = self.RegFile['IOA'] | 0b1000 if pyxel.btn(pyxel.KEY_RIGHT) else self.RegFile['IOA'] & 0b0111
+
     def _overflow(self, result):
         mask = 0b100000000
         return bool(mask & result)
@@ -144,53 +212,53 @@ class Processor:
     # instructions 1 - 16
     def _type1(self):
         mask = 0b11111111
-        rbra = self.RegFile['RB'].val << (INSTR_4) | self.RegFile['RA'].val
-        rdrc = self.RegFile['RD'].val << (INSTR_4) | self.RegFile['RC'].val
+        rbra = self.RegFile['RB'] << (INSTR_4) | self.RegFile['RA']
+        rdrc = self.RegFile['RD'] << (INSTR_4) | self.RegFile['RC']
         if self.instr.dec == 0b00000000: # 1. rot-r
-            dacc = self.ACC.val >> 1
-            self.ACC.val = ((self.ACC.val & 0b1) << (INSTR_8-1)) | dacc
+            dacc = self.RegFile['ACC'] >> 1
+            self.RegFile['ACC'] = ((self.RegFile['ACC'] & 0b1) << (INSTR_8-1)) | dacc
 
         elif self.instr.dec == 0b00000001: # 2. rot-l
-            dacc = self.ACC.val << 1
-            self.ACC.val = (dacc & mask) | dacc >> INSTR_8
+            dacc = self.RegFile['ACC'] << 1
+            self.RegFile['ACC'] = (dacc & mask) | dacc >> INSTR_8
 
         elif self.instr.dec == 0b00000010: # 3. rot-rc
-            cfacc = self.CF.val << INSTR_8 | self.ACC.val
+            cfacc = self.RegFile['CF'] << INSTR_8 | self.RegFile['ACC']
             dcfacc = cfacc >> 1
             self.CFACC = (cfacc & 0b1 << INSTR_8-1) | dcfacc 
        
         elif self.instr.dec  == 0b00000011: # 4. rot-lc
-            cfacc = self.CF.val << INSTR_8 | self.ACC.val
+            cfacc = self.RegFile['CF'] << INSTR_8 | self.RegFile['ACC']
             dcfacc = cfacc << 1
             self.CFACC = (dcfacc & mask) | dcfacc >> INSTR_8
         
         elif self.instr.dec == 0b00000100: # 5. from-mba
-            self.ACC.val = self.DataMemory[rbra]
+            self.RegFile['ACC'] = self.DataMemory[rbra]
         
         elif self.instr.dec == 0b00000101: # 6. to-mba
-            self.DataMemory[rbra] = self.ACC.val
+            self.DataMemory[rbra] = self.RegFile['ACC']
        
         elif self.instr.dec == 0b00000110: # 7. from-mbc
-            self.ACC.val = self.DataMemory[rdrc]
+            self.RegFile['ACC'] = self.DataMemory[rdrc]
        
         elif self.instr.dec == 0b00000111: # 8. to-mbc
-            self.DataMemory[rdrc] = self.ACC.val
+            self.DataMemory[rdrc] = self.RegFile['ACC']
 
         elif self.instr.dec == 0b00001000: # 9. addc-mba
-            result = self.ACC.val + self.DataMemory[rbra] + self.CF.val
-            self.CF.val = self._overflow(result)
+            result = self.RegFile['ACC'] + self.DataMemory[rbra] + self.RegFile['CF']
+            self.RegFile['CF'] = self._overflow(result)
 
         elif self.instr.dec == 0b00001001: # 10. add-mba
-            result = self.ACC.val + self.DataMemory[rdrc]
-            self.CF.val = self._overflow(result)
+            result = self.RegFile['ACC'] + self.DataMemory[rdrc]
+            self.RegFile['CF'] = self._overflow(result)
 
         elif self.instr.dec == 0b00001010: # 11. subc-mba
-            result = self.ACC.val - self.DataMemory[rbra] + self.CF.val
-            self.CF.val = self._underflow(result)
+            result = self.RegFile['ACC'] - self.DataMemory[rbra] + self.RegFile['CF']
+            self.RegFile['CF'] = self._underflow(result)
 
         elif self.instr.dec == 0b00001011: # 12. sub-mba
-            result = self.ACC.val - self.DataMemory[rbra]
-            self.CF.val = self._underflow(result)
+            result = self.RegFile['ACC'] - self.DataMemory[rbra]
+            self.RegFile['CF'] = self._underflow(result)
 
         elif self.instr.dec == 0b00001100: # 13. inc*-mba
             self.DataMemory[rbra] = self.DataMemory[rbra] + 1
@@ -204,47 +272,52 @@ class Processor:
         elif self.instr.dec == 0b00001111: # 16. dec*-mdc
             self.DataMemory[rdrc] = self.DataMemory[rdrc] - 1
         
-        self.PC.val += 1
+        self.PC += 1
+
+        return 
     
     # instructions 17 - 24
     def _type2(self):
         reg_bits = self.instr.bin[4:7]
         tag_bit = self.instr.bin[-1]
-        rdrc = self.RegFile['RD'].val << (INSTR_4) | self.RegFile['RC'].val
-        rbra = self.RegFile['RB'].val << (INSTR_4) | self.RegFile['RA'].val
+        rdrc = self.RegFile['RD'] << (INSTR_4) | self.RegFile['RC']
+        rbra = self.RegFile['RB'] << (INSTR_4) | self.RegFile['RA']
 
         if reg_bits in dasm.registers and tag_bit == 0: # 17. inc*-reg
             reg_name = dasm.registers[reg_bits]
-            self.RegFile[reg_name].val += 1
+            self.RegFile[reg_name] += 1
 
         elif reg_bits in dasm.registers and tag_bit == 1: # 18. dec*-reg
             reg_name = dasm.registers[reg_bits]
-            self.RegFile[reg_name].val -= 1
+            self.RegFile[reg_name] -= 1
 
         elif self.instr == 0b00011010: # 19. and-ba
-            accAndMem = self.ACC.val & self.DataMemory[rbra]
-            self.ACC.val = accAndMem
+            accAndMem = self.RegFile['ACC'] & self.DataMemory[rbra]
+            self.RegFile['ACC'] = accAndMem
 
         elif self.instr == 0b00011011: # 20. xor-ba
-            accXorMem = self.ACC.val ^ self.DataMemory[rbra]
-            self.ACC.val = accXorMem
+            accXorMem = self.RegFile['ACC'] ^ self.DataMemory[rbra]
+            self.RegFile['ACC'] = accXorMem
         
         elif self.instr == 0b00011100: # 21. or-ba
-            accOrMem = self.ACC.val | self.DataMemory[rbra]
-            self.ACC.val = accOrMem
+            accOrMem = self.RegFile['ACC'] | self.DataMemory[rbra]
+            self.RegFile['ACC'] = accOrMem
 
         elif self.instr == 0b00011101: # 22. and*-mba
-            memAndAcc = self.ACC.val & self.DataMemory[rbra]
+            memAndAcc = self.RegFile['ACC'] & self.DataMemory[rbra]
             self.DataMemory[rbra] = memAndAcc
         
         elif self.instr == 0b00011110: # 23. xor*-mba
-            memXorAcc = self.ACC.val ^ self.DataMemory[rbra]
+            memXorAcc = self.RegFile['ACC'] ^ self.DataMemory[rbra]
             self.DataMemory[rbra] = memXorAcc
         
         elif self.instr == 0b00011111: # 24. or*-mba
-            memOrAcc = self.ACC.val | self.DataMemory[rbra]
+            memOrAcc = self.RegFile['ACC'] | self.DataMemory[rbra]
             self.DataMemory[rbra] = memOrAcc
+        
+        self.PC += 1
 
+        return
     # instructions 25 - 48
     def _type3(self):
         reg_bits = self.instr.bin[4:7]
@@ -252,93 +325,51 @@ class Processor:
 
         if reg_bits in dasm.registers and tag_bit == 0: # 25. to-ref     
             reg_name = dasm.registers[reg_bits]
-            self.RegFile[reg_name].val = self.ACC.val
+            self.RegFile[reg_name] = self.RegFile['ACC']
 
         elif reg_bits in dasm.registers and tag_bit == 1: # 26. from-reg
             reg_name = dasm.registers[reg_bits]
-            self.ACC.val = self.RegFile[reg_name].val
+            self.RegFile['ACC'] = self.RegFile[reg_name]
 
         elif self.instr.dec == 0b00101010: # 27. clr-cf
-            self.CF.val = 0
+            self.RegFile['CF'] = 0
         
         elif self.instr.dec == 0b00101011: # 28. set-cf	
-            self.CF.val = 1
-        
-        elif self.instr.dec == 0b00101100: # 29. set-ei
-            self.EI = 1
-
-        elif self.instr.dec == 0b00101100: # 30. clr-ei
-            self.EI = 0
+            self.RegFile['CF'] = 1
 
         elif self.instr.dec == 0b00101110: # 31. ret
             lowerTemp = self.TEMP & HEX_16L12 
-            upperAcc = self.ACC.val & HEX_16U4
-            self.ACC.val = upperAcc | lowerTemp
-            self.TEMP = 0
-
-        elif self.instr.dec == 0b00101110: # 32. retc
-            lowerTemp = self.TEMP & HEX_16L12 
-            upperAcc = self.ACC.val & HEX_16U4
-            self.ACC.val = upperAcc | lowerTemp
-            self.CF.val = self.TEMP & BIN_13
+            upperAcc = self.RegFile['ACC'] & HEX_16U4
+            self.RegFile['ACC'] = upperAcc | lowerTemp
             self.TEMP = 0
         
-        elif self.instr.dec == 0b00110000: # 33. from-pa
-            self.ACC.val = self.PA.val
+        elif self.instr.dec == 0b00110000: # 33. from-ioa
+            self.RegFile['ACC'] = self.RegFile['IOA']
         
         elif self.instr.dec == 0b00110001: # 34. inc
-            self.ACC.val = self.ACC.val + 1
+            self.RegFile['ACC'] = self.RegFile['ACC'] + 1
         
         elif self.instr.dec == 0b00110001: # 34. inc
-            self.ACC.val = self.ACC.val + 1
-        
-        elif self.instr.dec == 0b00110010: # 35. to-ioa
-            self.RegFile['IOA'].val = self.ACC.val 
-        
-        elif self.instr.dec == 0b00110011: # 36. to-iob
-            self.RegFile['IOB'].val = self.ACC.val 
-        
-        elif self.instr.dec == 0b00110011: # 37. to-ioc
-            self.RegFile['IOC'].val = self.ACC.val 
-
-        elif self.instr.dec == 0b00110101: # 38. -
-            ...
+            self.RegFile['ACC'] = self.RegFile['ACC'] + 1
         
         elif self.instr.dec == 0b00110110: # 39. bcd
-            if (self.ACC.val >= 0b1010 | self.CF.val == 1):
-                self.ACC.val = self.ACC.val + 0b0110
-                self.CF.val = 1
+            if (self.RegFile['ACC'] >= 0b1010 | self.RegFile['CF'] == 1):
+                self.RegFile['ACC'] = self.RegFile['ACC'] + 0b0110
+                self.RegFile['CF'] = 1
             
         elif self.instr.dec == 0b0011011100111110: # 40. shutdown
             exit()
-
-        elif self.instr.dec == 0b00111000: # 41. timer-start
-            ...
-
-        elif self.instr.dec == 0b00111000: # 42. timer-send
-            ...
-        
-        elif self.instr.dec == 0b00111010: # 43. from-timerl
-            self.ACC.val = self.TIMER.val & HEX_8L4 
-
-        elif self.instr.dec == 0b00111011: # 44. from-timerh
-            self.ACC.val = (self.TIMER.val & HEX_8U4) >> 4
-
-        elif self.instr.dec == 0b00111100: # 45. to-timerl
-            lowerAcc =  self.ACC.val & HEX_8L4
-            upperTimer =  self.TIMER.val & HEX_8U4
-            self.TIMER.val = upperTimer | lowerAcc
-        
-        elif self.instr.dec == 0b00111101: # 46. to-timerh
-            lowerAcc = HEX_8L4 & self.ACC.val
-            upperTimer = (HEX_8U4 & self.TIMER.val) >> 4
-            self.TIMER.val = upperTimer | lowerAcc
 
         elif self.instr.dec == 0b00111110: # 47. nop
             ...
 
         elif self.instr.dec == 0b00111111: # 48. dec
-            self.ACC.val = self.ACC.val - 1
+            self.RegFile['ACC'] = self.RegFile['ACC'] - 1
+
+                   
+        self.PC += 1
+
+        return 
 
     # instructions 49 - 64
     def _type4(self):
@@ -347,20 +378,22 @@ class Processor:
         key_op = asm_u.to_bin(op, INSTR_8)
         match (dasm.to_operation[key_op]):
             case "add": # 49
-                self.ACC.val = self.ACC.val + imm
+                self.RegFile['ACC'] = self.RegFile['ACC'] + imm
             case "sub": # 50
-                self.ACC.val = self.ACC.val - imm
+                self.RegFile['ACC'] = self.RegFile['ACC'] - imm
             case "and": # 51
-                self.ACC.val = self.ACC.val & imm
+                self.RegFile['ACC'] = self.RegFile['ACC'] & imm
             case "xor": # 52
-                self.ACC.val = self.ACC.val ^ imm
+                self.RegFile['ACC'] = self.RegFile['ACC'] ^ imm
+  
             case "or": # 53
-                self.ACC.val = self.ACC.val | imm
+                self.RegFile['ACC'] = self.RegFile['ACC'] | imm
             case "r4": # 55
-                self.RegFile['RE'].val = imm
-            case "timer": # 56
-                self.TIMER.val = imm
-        # 57 - 60 ???
+                self.RegFile['RE'] = imm
+               
+        self.PC += 1
+
+        return 
     
     # instructions 65
     def _type5(self):
@@ -368,8 +401,12 @@ class Processor:
         ra_imm = int(self.instr.bin[4:8] , 2)
         imm = rb_imm | ra_imm
 
-        self.RegFile['RA'].val = ra_imm
-        self.RegFile['RB'].val = rb_imm
+        self.RegFile['RA'] = ra_imm
+        self.RegFile['RB'] = rb_imm
+
+        self.PC += 1
+
+        return 
 
     # instructions 66
     def _type6(self):
@@ -377,13 +414,21 @@ class Processor:
         rd_imm = int(self.instr.bin[4:8] , 2)
         imm = rc_imm | rd_imm
 
-        self.RegFile['RC'].val = rc_imm
-        self.RegFile['RD'].val = rd_imm
+        self.RegFile['RC'] = rc_imm
+        self.RegFile['RD'] = rd_imm
+               
+        self.PC += 1
+
+        return 
 
     # instructions 67
     def _type7(self):
         imm = self.instr & HEX_8L4 # 67. acc <imm>	
-        self.ACC.val = imm
+        self.RegFile['ACC'] = imm
+
+        self.PC += 1
+
+        return 
 
     # instructions 68
     def _type8(self):
@@ -392,10 +437,13 @@ class Processor:
         a = int(self.instr.bin[8:], 2)    
         imm = (b << 8) | (a)
 
-        if (self.PC.val & k == 1):
-            upperPC = self.PC.val & HEX_16U5
-            self.PC.val = upperPC | imm
+        if (self.PC & k == 1):
+            upperPC = self.PC & HEX_16U5
+            self.PC = upperPC | imm
 
+        self.PC += 1
+
+        return 
     # instructions 69 - 70
     def _type9(self):
         b = int(self.instr.bin[5:8], 2)
@@ -404,12 +452,16 @@ class Processor:
         tag = self.instr.bin[4]
 
         if (tag == 0):  # 69. bnz-a <imm>
-            upperPC = self.PC.val & HEX_16U5
-            self.PC.val = upperPC | imm
+            upperPC = self.PC & HEX_16U5
+            self.PC = upperPC | imm
         elif (tag == 1): # 70. bnz-b <imm>
-            upperPC = self.PC.val & HEX_16U5
-            self.PC.val = upperPC | imm
-        
+            upperPC = self.PC & HEX_16U5
+            self.PC = upperPC | imm
+
+        self.PC += 1
+
+        return   
+    
     # instructions 71 - 72
     def _type10(self):
         b = int(self.instr.bin[5:8], 2)
@@ -417,12 +469,16 @@ class Processor:
         imm = (b << 8) | (a)
         tag = self.instr.bin[4]
 
-        if (self.ACC.val != 0 and tag == 0): # 71. beqz <imm>
-            upperPC = self.PC.val & HEX_16U5
-            self.PC.val = upperPC | imm
-        elif (self.ACC.val == 0 and tag == 1): # 72. bnez <imm>
-            upperPC = self.PC.val & HEX_16U5
-            self.PC.val = upperPC | imm
+        if (self.RegFile['ACC'] != 0 and tag == 0): # 71. beqz <imm>
+            upperPC = self.PC & HEX_16U5
+            self.PC = upperPC | imm
+        elif (self.RegFile['ACC'] == 0 and tag == 1): # 72. bnez <imm>
+            upperPC = self.PC & HEX_16U5
+            self.PC = upperPC | imm
+
+        self.PC += 1
+
+        return 
 
     # instructions 73 - 74
     def _type11(self):
@@ -431,12 +487,16 @@ class Processor:
         imm = (b << 8) | (a)
         tag = self.instr.bin[4]
 
-        if (self.CF.val != 0 and tag == 0): # 73. beqz-cf <imm>
-            upperPC = self.PC.val & HEX_16U5
-            self.PC.val = upperPC | imm
-        elif (self.CF.val == 0 and tag == 1): # 74. bnez-cf <imm>
-            upperPC = self.PC.val & HEX_16U5
-            self.PC.val = upperPC | imm
+        if (self.RegFile['CF'] != 0 and tag == 0): # 73. beqz-cf <imm>
+            upperPC = self.PC & HEX_16U5
+            self.PC = upperPC | imm
+        elif (self.RegFile['CF'] == 0 and tag == 1): # 74. bnez-cf <imm>
+            upperPC = self.PC & HEX_16U5
+            self.PC = upperPC | imm
+        
+        self.PC += 1
+
+        return 
 
     # instructions 75 - 76
     def _type12(self):
@@ -445,13 +505,13 @@ class Processor:
         imm = (b << 8) | (a)
         tag = self.instr.bin[4]
 
-        # if timer on
-        if (tag == 0): # 75. b-timer <imm>
-            upperPC = self.PC.val & HEX_16U5
-            self.PC.val = upperPC | imm
-        elif (self.RegFile['RD'].val != 0 and tag == 1): # 76. bnez-cf <imm>
-            upperPC = self.PC.val & HEX_16U5
-            self.PC.val = upperPC | imm
+        if (self.RegFile['RD'] != 0 and tag == 1): # 76. bnez-cf <imm>
+            upperPC = self.PC & HEX_16U5
+            self.PC = upperPC | imm
+        
+        self.PC += 1
+
+        return 
 
     # instructions 77
     def _type13(self):
@@ -459,8 +519,12 @@ class Processor:
         a = int(self.instr.bin[8:], 2)    
         imm = (b << 8) | (a)
 
-        upperPC = self.PC.val & HEX_16U4
-        self.PC.val = upperPC | imm
+        upperPC = self.PC & HEX_16U4
+        self.PC = upperPC | imm
+
+        self.PC += 1
+
+        return 
 
     # instructions 78
     def _type14(self):
@@ -468,8 +532,13 @@ class Processor:
         a = int(self.instr.bin[8:], 2)    
         imm = (b << 8) | (a)
 
-        self.TEMP.val = self.PC.val + 2
-        upperPC = self.PC.val & HEX_16U4
-        self.PC.val = upperPC | imm
-    
-Processor()
+        self.TEMP = self.PC + 2
+        upperPC = self.PC & HEX_16U4
+        self.PC = upperPC | imm
+
+        self.PC += 1
+
+        return 
+
+cpu = Arch242Emulator()
+Pyxel(cpu)
