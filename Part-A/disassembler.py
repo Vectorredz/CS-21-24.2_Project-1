@@ -6,8 +6,16 @@ type InstEncoder = Callable
 
 instruction_map: dict[str, Callable] = {}
 
-registers = ["000", "001", "010", "O11", "100"]
+registers = {"000": "RA", 
+             "001": "RB", 
+             "010": "RC", 
+             "O11" : "RD", 
+             "100": "RE"}
+
+bin_registers = [0b000, 0b001, 0b010, 0b011, 0b100]
+
 opcodes = ["0001", "0010"]
+
 branches = {
     "bnz-a" : "10100",
     "bnz-b" : "10101",
@@ -24,29 +32,33 @@ instr_type = {
     "0011": "Type3",
     "0100": "Type4",
     "0101": "Type5",
-    "0111": "Type6",
-    "100X": "Type7",
-    "1010": "Type8",
-    "1011": "Type9",
-    "1100": "Type10",
-    "1101": "Type11",
-    "1110": "Type12",
-    "1111": "Type13"
+    "0110": "type6",
+    "0111": "Type7",
+    "100X": "Type8",
+    "1010": "Type9",
+    "1011": "Type10",
+    "1100": "Type11",
+    "1101": "Type12",
+    "1110": "Type13",
+    "1111": "Type14"
 }
+
+from_operation = {
+    "add" : "01000000",
+    "sub" : "01000001",
+    "and" : "01000010",
+    "xor" : "01000011",
+    "or"  : "01000100",
+    "r4"  : "01000110",
+    "timer" : "01000111"
+ }
+
+to_operation = {v: k for k, v in from_operation.items()}
 
 immediates_4 = [f"{i:04b}" for i in range(2**4)]
 immediates_11 = [f"{i:011b}" for i in range(2**11)]
 immediates_12 = [f"{i:012b}" for i in range(2**12)]
 immediates_k = [f"{i:02b}" for i in range(2**2)]
-arithmetic = {
-    "add" : "010000000000",
-    "sub" : "010000010000",
-    "and" : "010000100000",
-    "xor" : "010000110000",
-    "or" : "010001000000",
-    "r4" : "010001100000",
-    "timer" : "010001110000"
- }
 
 def dasm(code: str):
     def _dasm(f: Callable):
@@ -88,7 +100,7 @@ def _(): return "from-mdc"
 @dasm("00000111")
 def _(): return "to-mdc"
 
-#          0000 1XXX -> ACC arithmetic
+#          0000 1XXX -> ACC from_operation
 # OPCODE:  0000 1X
 
 @dasm("00001000")
@@ -229,9 +241,9 @@ def localizer(binary, ar, imm):
     def _(): 
         return f"{ar} {imm}"
         
-for ar in arithmetic.keys():
+for ar in from_operation.keys():
     for imm in immediates_4:
-        binary = f"{arithmetic[ar]}{imm}"
+        binary = f"{from_operation[ar]}0000{imm}"
         localizer(binary, ar, imm)
 
 # ======================================================

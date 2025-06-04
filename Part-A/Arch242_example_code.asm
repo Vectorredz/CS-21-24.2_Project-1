@@ -1,3 +1,1 @@
-rot-r
-rot-l
-dec*-reg 010
+rarb 232

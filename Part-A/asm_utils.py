@@ -6,4 +6,5 @@ def to_bin(num: str, bits: int):
     assert len(bin(num)[2:]) <= bits
     num = format(num, f"0{bits}b")
     return num
-
+def to_strbin(num: str):
+    return f"0b{num}"
