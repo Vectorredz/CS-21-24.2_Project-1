@@ -7,12 +7,19 @@ from asm_directives import directive_map
 
 # read lines and convert to machine code
 
+comment = "--"
 directive_lines: list[str] = []
 instruction_lines: list[str] = []
 output_lines: list[str] = []
 initial_file = open(Path("Arch242_example_code.asm"), "r") # Change filename to final
 while (line := initial_file.readline()) != "":
     line = line.lstrip().rstrip()
+    if line == "": continue
+    
+    comment_idx = line.find(comment)
+    if comment_idx != -1:
+        line = line[:comment_idx]
+    line.lstrip().rstrip()
     if line[0] == ".":
         directive_lines.append(line)
     else:

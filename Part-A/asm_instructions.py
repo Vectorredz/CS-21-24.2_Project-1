@@ -128,7 +128,7 @@ def _(): return "00101110"
 @new_i("retc")
 def _(): return "00101111"
 
-@new_i("from-pa")
+@new_i("from-ioa")
 def _(): return "00110000"
 
 @new_i("inc")
@@ -251,7 +251,7 @@ def _(imm):
     imm = to_bin(imm, 8)
     YYYY = imm[:5]
     XXXX = imm[5:]
-    return f"0101{XXXX}0000{YYYY}"
+    return f"0110{XXXX}0000{YYYY}"
 
 # ======================================================
 
