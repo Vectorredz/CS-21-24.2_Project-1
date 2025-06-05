@@ -4,11 +4,14 @@ INSTR_BITS = INSTR_16 = 16
 MEM_BITS = INSTR_8 = 8
 INSTR_4 = 4
 
-SCREEN_WIDTH = 200
-SCREEN_HEIGHT = 300
-DIM = 10
+SCREEN_WIDTH = 380
+SCREEN_HEIGHT = 280
+GAME_HEIGHT = 220
+SYS_WIDTH = 200
+
+DIM = 16
 BASE_DIR = Path(__file__).resolve().parent.parent
-PATH = BASE_DIR / "Arch242_example_code.asm"
+PATH = BASE_DIR / "Arch242_output_file.asm"
 
 # MASKS
 HEX_16U4 = 0xF000

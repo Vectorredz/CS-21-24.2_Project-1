@@ -168,7 +168,7 @@ class EmulatorInstructions:
             exit(self)
 
         elif self.cpu.instr.dec == 0b00111110: # 47. nop
-            ...
+            pass
 
         elif self.cpu.instr.dec == 0b00111111: # 48. dec
             self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] - 1
@@ -184,25 +184,24 @@ class EmulatorInstructions:
         op = (self.cpu.instr.dec & emu_u.HEX_16U8) >> emu_u.INSTR_8 # get the logical op
         key_op = asm_u.to_bin(op, emu_u.INSTR_8)
         match (dasm.to_operation[key_op]):
-            case "add": # 49
+            case "add": # 49 add <imm>	
                 self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] + imm
-            case "sub": # 50
+            case "sub": # 50 sub <imm>
                 self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] - imm
-            case "and": # 51
+            case "and": # 51 and <imm>
                 self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] & imm
-            case "xor": # 52
+            case "xor": # 52 xor <imm>
                 self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] ^ imm
-
-            case "or": # 53
+            case "or": # 53 or <imm>
                 self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] | imm
-            case "r4": # 55
+            case "r4": # 55 r4 <imm>
                 self.cpu.RegFile['RE'] = imm
                 
         self.cpu.PC += 1
 
         return 
 
-    # instructions 65
+    # instructions 65 rarb <imm>
     def _type5(self):
         rb_imm = int(self.cpu.instr.bin[12:], 2) << 4
         ra_imm = int(self.cpu.instr.bin[4:8] , 2)
@@ -215,7 +214,7 @@ class EmulatorInstructions:
 
         return 
 
-    # instructions 66
+    # instructions 66 rcrd <imm>
     def _type6(self):
         rc_imm = int(self.cpu.instr.bin[12:], 2) << 4
         rd_imm = int(self.cpu.instr.bin[4:8] , 2)
@@ -228,7 +227,7 @@ class EmulatorInstructions:
 
         return 
 
-    # instructions 67
+    # instructions 67 acc <imm>
     def _type7(self):
         imm = self.cpu.instr & emu_u.HEX_8L4 # 67. acc <imm>	
         self.cpu.RegFile['ACC'] = imm
@@ -237,7 +236,7 @@ class EmulatorInstructions:
 
         return 
 
-    # instructions 68
+    # instructions 68 b-bit <k> <imm>
     def _type8(self):
         k = int(self.cpu.instr.bin[3:5], 2)
         b = int(self.cpu.instr.bin[5:8], 2)

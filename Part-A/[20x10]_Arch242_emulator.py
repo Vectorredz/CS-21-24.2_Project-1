@@ -50,21 +50,19 @@ class Pyxel:
         # --- Pyxel
         self.screen_width = emu_u.SCREEN_WIDTH
         self.screen_height = emu_u.SCREEN_HEIGHT
-        self.rows = 10
-        self.cols = 20
-        self.mid = emu_u.SCREEN_WIDTH // 2
+        self.rows = 20
+        self.cols = 10
         self.mem_addr = 192
         self.emulator = emulator
         self.score = 0 
-        self._build_matrix()
-        # self.print_matrix()
         pyxel.init(self.screen_width, self.screen_height, fps=30)
         pyxel.load(str(Path("assets/snake.pyxres")))
+        self._build_matrix()
         pyxel.run(self.update, self.draw)
 
     def _build_matrix(self):
         mmio_addr = [data for data in range(192, 242)]
-        self.led_matrix = [[0 for _ in range(self.cols)] for _ in range(self.rows)]
+        self.led_matrix = [[None for _ in range(self.cols)] for _ in range(self.rows)]
         k = j = 0
         for row in range(self.rows):
             for col in range(self.cols):
@@ -75,7 +73,6 @@ class Pyxel:
                 else: 
                     k+=1
                     j=0
-        # print(self.led_matrix)
 
     def _write_cell(self, mem_addr, val):
         for row in range(self.rows):
@@ -83,118 +80,75 @@ class Pyxel:
                 cell = self.led_matrix[row][col]
                 if (cell.memAddr == mem_addr) & (cell.mapbit == val):
                     self.led_matrix[row][col].state = 1
-                
 
-    def print_matrix(self):
-        for row in self.led_matrix:
-            print("".join("1" if cell.state else "0" for cell in row))  
+    # def print_matrix(self):
+    #     for row in self.led_matrix:
+    #         print("".join("1" if cell.state else "0" for cell in row))  
 
     def update(self):
-        # print(self.emulator.RegFile['IOA'])
         self._write_cell(self.mem_addr, self.emulator.RegFile['IOA'])
         self.emulator.clock_tick()
       
     def _draw_cell(self):
-        # pyxel.rect(0, 0, emu_u.GAME_HEIGHT, emu_u.SCREEN_HEIGHT, 3)
+        pyxel.rect(0, 0, emu_u.GAME_WIDTH, emu_u.SCREEN_HEIGHT, 3)
         self._draw_hud()
         matrix_width = self.cols * emu_u.DIM
         matrix_height = self.rows * emu_u.DIM
         
-        offset_x = (emu_u.SCREEN_WIDTH - matrix_width) // 2
-        offset_y = (emu_u.GAME_HEIGHT- matrix_height) // 2
+        offset_x = (emu_u.GAME_WIDTH - matrix_width) // 2
+        offset_y = (emu_u.SCREEN_HEIGHT - matrix_height) // 2
         
         for row in range(self.rows):
             for col in range(self.cols):
                 x = offset_x + col * emu_u.DIM
                 y = offset_y + row * emu_u.DIM
-                # print(x, y)
-                if (self.led_matrix[row][col].state == 1):
-                    pyxel.blt(x,y,0,0,88,16,16)
-                else:
-                    pyxel.blt(x,y,0,16,88,16,16)
+                print(x, y)
+                pyxel.blt(x,y,0,12,0,12,12)
                 # pyxel.rectb(x, y, emu_u.DIM, emu_u.DIM, 0)
-        # self._draw_snake(offset_x  * emu_u.DIM, offset_y  * emu_u.DIM)
+                # color = 11 if self.led_matrix[row][col].state == 1 else 6
+                # pyxel.rect(x, y, emu_u.DIM - 1, emu_u.DIM - 1, color)
+        self._draw_snake(offset_x  * emu_u.DIM, offset_y  * emu_u.DIM)
     def _draw_title(self):
-           # S
-        pyxel.blt(self.mid - 72, 2, 0, 0,24,16,16)
-        # # N
-        pyxel.blt(self.mid - 56, 2, 0, 16,24,16,16)
-        # # # A
-        pyxel.blt(self.mid - 41, 2, 0, 32,24,16,16)
-        # # # K
-        pyxel.blt(self.mid - 25, 2, 0, 48,24,16,16)
-        # # # E
-        pyxel.blt(self.mid - 9, 2, 0, 64,24,16,16)
-        # # # G
-        pyxel.blt(self.mid + 5, 2, 0, 0,40,16,16)
+          # S
+        pyxel.blt(emu_u.GAME_WIDTH + 10, 10, 0, 0,24,16,16)
+        # N
+        pyxel.blt(emu_u.GAME_WIDTH + 26, 10, 0, 16,24,16,16)
         # # A
-        pyxel.blt(self.mid + 21, 2, 0, 16,40,16,16)
-        # # M
-        pyxel.blt(self.mid + 37, 2, 0, 32,40,16,16)
+        pyxel.blt(emu_u.GAME_WIDTH + 41, 10, 0, 32,24,16,16)
+        # # K
+        pyxel.blt(emu_u.GAME_WIDTH + 56, 10, 0, 48,24,16,16)
         # # E
-        pyxel.blt(self.mid + 53, 2, 0, 48,40,16,16)
+        pyxel.blt(emu_u.GAME_WIDTH + 72, 10, 0, 64,24,16,16)
+        # # G
+        pyxel.blt(emu_u.GAME_WIDTH + 16, 26, 0, 0,40,16,16)
+        # A
+        pyxel.blt(emu_u.GAME_WIDTH + 32, 26, 0, 16,40,16,16)
+        # M
+        pyxel.blt(emu_u.GAME_WIDTH + 48, 26, 0, 32,40,16,16)
+        # E
+        pyxel.blt(emu_u.GAME_WIDTH + 64, 26, 0, 48,40,16,16)
 
     def _draw_snake(self, x, y):
-        pass
+        pyxel.blt(5,5, 0,0,56,11,11, 0)
 
     def _center(self, text):
         text_width = len(text) * 4  
-        return ((emu_u.SCREEN_WIDTH) - text_width) // 2
+        return emu_u.GAME_WIDTH + ((emu_u.SCREEN_WIDTH - emu_u.GAME_WIDTH) - text_width) // 2
 
     def _draw_hud(self):
-        # Clear HUD area (keep original background)
-        pyxel.rectb(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH, emu_u.GAME_HEIGHT - 20, 200, emu_u.SCREEN_HEIGHT - emu_u.GAME_HEIGHT + 20, 7)
-        pyxel.rect(-emu_u.SYS_WIDTH, emu_u.GAME_HEIGHT - 20, emu_u.SCREEN_WIDTH, emu_u.SCREEN_HEIGHT, 1)
-
-        # --- LEFT: INSTRUCTIONS (unchanged) ---
-        pyxel.text(10, emu_u.GAME_HEIGHT - 14, "HOW TO PLAY", 7)
-        pyxel.blt(15, emu_u.GAME_HEIGHT - 5, 0, 10, 57, 40, 20, 0)
-        pyxel.text(15, emu_u.GAME_HEIGHT + 17, "Press arrow keys", 7)
-        pyxel.text(8, emu_u.GAME_HEIGHT + 25, "to change direction", 7)
-
-        center_left = emu_u.SCREEN_WIDTH // 3  # Shifted left from absolute center
-
-        # Score (aligned with icons)
-        pyxel.blt(center_left - 20, emu_u.GAME_HEIGHT - 12, 0, 32, 88, 16, 16, 0)
-        pyxel.text(center_left, emu_u.GAME_HEIGHT - 6, "SCORE:", 7)
-
-        # LED ON
-        pyxel.blt(center_left - 20, emu_u.GAME_HEIGHT + 12, 0, 0, 88, 16, 16, 0)
-        pyxel.text(center_left, emu_u.GAME_HEIGHT + 18, "LED ON:", 7)
-
-        # LED OFF
-        pyxel.blt(center_left - 20, emu_u.GAME_HEIGHT + 36, 0, 16, 88, 16, 16, 0)
-        pyxel.text(center_left, emu_u.GAME_HEIGHT + 40, "LED OFF:", 7)
-
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 10, emu_u.GAME_HEIGHT - 14, "Arch242 CPU Emulator", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 8, emu_u.GAME_HEIGHT - 8, "---------------------------------------------", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 10, emu_u.GAME_HEIGHT, "INSTRUCTION: ", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 10, emu_u.GAME_HEIGHT + 8, "PROGRAM COUNTER: ", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 10, emu_u.GAME_HEIGHT + 16, "CPU CLOCK CYCLE: ", 7)
-
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT, "|", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT + 6, "|", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT + 12, "|", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT + 18, "|", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT + 24, "|", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT + 30, "|", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT + 36, "|", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT + 42, "|", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT + 48, "|", 7)
-
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 130, emu_u.GAME_HEIGHT, "RA: ", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 130, emu_u.GAME_HEIGHT + 8, "RB: ", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 130, emu_u.GAME_HEIGHT + 16, "RC: ", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 130, emu_u.GAME_HEIGHT + 24, "RD: ", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 130, emu_u.GAME_HEIGHT + 32, "RE: ", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 130, emu_u.GAME_HEIGHT + 40, "ACC: ", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 130, emu_u.GAME_HEIGHT + 48, "CF: ", 7)
         
-    
+        pyxel.rect(emu_u.GAME_WIDTH, 0, (emu_u.SCREEN_WIDTH - emu_u.GAME_WIDTH), emu_u.SCREEN_HEIGHT, 1) 
+        self._draw_title()
+        pyxel.blt(emu_u.GAME_WIDTH + 22, 58, 0, 31,0,10,12,0)
+        pyxel.text(self._center("SCORE:") - 5, 60, "SCORE:", 7)
+        pyxel.text(self._center(f"{self.score}") + 10, 60, f"{self.score}", 7)
+        pyxel.text(self._center("HOW TO PLAY"), 76, "HOW TO PLAY", 7)
+        pyxel.text(self._center("press arrow keys"), 110, "Press arrow keys", 7)
+        pyxel.text(self._center("to change direction"), 120, "to change direction", 7)
+        pyxel.blt(emu_u.GAME_WIDTH + 35, 86, 0, 10,57,40,20, 0)
+  
     def draw(self):
         self._draw_cell()
-        self._draw_hud()
-        self._draw_title()
 
 class Arch242Emulator: # CPU
     def __init__(self):  
@@ -289,7 +243,7 @@ class Arch242Emulator: # CPU
         self.RegFile['IOA'] = self.RegFile['IOA'] | 0b0100 if pyxel.btn(pyxel.KEY_LEFT) else self.RegFile['IOA'] & 0b1011
         self.RegFile['IOA'] = self.RegFile['IOA'] | 0b1000 if pyxel.btn(pyxel.KEY_RIGHT) else self.RegFile['IOA'] & 0b0111
 
-        # print(self.RegFile['IOA'])
+
 def main():
     cpu = Arch242Emulator()
     Pyxel(cpu)

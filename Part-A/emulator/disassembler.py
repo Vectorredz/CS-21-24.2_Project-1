@@ -43,6 +43,8 @@ instr_type = {
     "1111": "Type14"
 }
 
+instr_16_bit = ["Type4", "Type8", "Type9", "Type10", "Type11", "Type12", "Type13", "Type14"]
+
 from_operation = {
     "add" : "01000000",
     "sub" : "01000001",
@@ -68,10 +70,7 @@ def dasm(code: str):
 
 # ======================================================
 
-# A-TYPE
-
-#         0000 00XX -> Rotate
-# OPCODE: 0000 00
+# Type 1 (1-16)
 
 @dasm("00000000")
 def _(): return "rot-r"
@@ -85,9 +84,6 @@ def _(): return "rot-rc"
 @dasm("00000011")
 def _(): return "rot-lc"
 
-#          0000 01XX -> ACC load & store
-# OPCODE:  0000 01
-
 @dasm("00000100")
 def _(): return "from-mba"
 
@@ -99,9 +95,6 @@ def _(): return "from-mdc"
 
 @dasm("00000111")
 def _(): return "to-mdc"
-
-#          0000 1XXX -> ACC from_operation
-# OPCODE:  0000 1X
 
 @dasm("00001000")
 def _(): return "addc-mba"
@@ -129,8 +122,8 @@ def _(): return "dec*-mdc"
 
 # ======================================================
 
-            # R-TYPE            # S-TYPE
-# --- inc*-reg, dec*-reg and to-reg, from-reg
+# Type 2 (17-24)
+
 def localizer(binary, opcode, op, reg):
     @dasm(binary)
     def _(): 
@@ -143,12 +136,6 @@ for opcode in opcodes:
     for op in range(2):
         for reg in registers:
             localizer(f"{opcode}{reg}{op}", opcode, op, reg)
-
-# ======================================================
-
-# A-TYPE
-
-# --- ACC logical
 
 @dasm("00011010")
 def _(): return "and-ba"
@@ -169,6 +156,8 @@ def _(): return "xor*-mba"
 def _(): return "or*-mba"
 
 # ======================================================
+
+# Type 3 (25-48)
 
 @dasm("00101010")
 def _(): return "clr-cf"
@@ -235,7 +224,8 @@ def _(): return "dec"
 
 # ======================================================
 
-# --- immediates
+# Type 4 (49-64)
+
 def localizer(binary, ar, imm):
     @dasm(binary)
     def _(): 
@@ -248,12 +238,16 @@ for ar in from_operation.keys():
 
 # ======================================================
 
+
 # TODO --- nops (nakakatamad)
+
+# type 5 
+
 # TODO --- RARBS
 
 # ======================================================
 
-# --- acc
+# type 7 (67)
 def localizer(binary,imm):
     @dasm(binary)
     def _(): 
@@ -263,7 +257,7 @@ for imm in immediates_4:
     binary = f"0111{imm}"
     localizer(binary, imm)
 
-# -- b-bit
+# type 8 (68)
 
 def localizer(binary, k, imm):
     @dasm(binary)
@@ -275,7 +269,7 @@ for k in immediates_k:
         binary = f"100{k}{imm}"
         localizer(binary, k, imm)
 
-# --- branch
+# type 9-14 (69-78)
 def localizer(binary, branch, imm):
     @dasm(binary)
     def _(): 
