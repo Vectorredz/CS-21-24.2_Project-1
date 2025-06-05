@@ -7,9 +7,15 @@ from asm_directives import directive_map
 
 # read lines and convert to machine code
 
+# Get the directory of asm_assembler.py
+BASE_DIR = Path(__file__).resolve().parent.parent 
+
+INPUT_PATH = BASE_DIR / "Arch242_example_code.asm"
+OUTPUT_PATH = BASE_DIR / "Arch242_output_file.asm"
+
 comment = "--"
 output_lines: list[str] = []
-initial_file = open(Path("Arch242_example_code.asm"), "r") # Change filename to final
+initial_file = open(INPUT_PATH, "r") # Change filename to final
 while (line := initial_file.readline()) != "":
     line = line.lstrip().rstrip()
     if line == "": continue
@@ -44,7 +50,7 @@ if bin_or_hex == 'hex':
     output_lines = [hex(int(line))[2:] for line in output_lines]
 
 # writes to destination ASM file
-destination_file = open(Path("Arch242_output_file.asm"), 'w+')
+destination_file = open(OUTPUT_PATH, 'w+')
 
 for line in output_lines:
     destination_file.write(line+"\n")

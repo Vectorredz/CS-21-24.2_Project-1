@@ -1,0 +1,21 @@
+from pathlib import Path
+
+INSTR_BITS = INSTR_16 = 16
+MEM_BITS = INSTR_8 = 8
+INSTR_4 = 4
+
+SCREEN_WIDTH = 200
+SCREEN_HEIGHT = 300
+DIM = 10
+BASE_DIR = Path(__file__).resolve().parent.parent
+PATH = BASE_DIR / "Arch242_example_code.asm"
+
+# MASKS
+HEX_16U4 = 0xF000
+HEX_16L12 = 0x0FFF
+HEX_16L4 = 0x000F
+HEX_16U8 = 0xFF00
+HEX_16U5 = 0xF800
+BIN_13 = 0b001000000000
+HEX_8L4 = 0x0F
+HEX_8U4 = 0xF0
