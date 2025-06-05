@@ -21,15 +21,19 @@ while (line := initial_file.readline()) != "":
     
     # directive
     if line[0] == ".":
-        encoded = line
+        output_lines.append(line)
     
     # instruction
     else:
         tokens = line.split(" ")
         encoded = instruction_map[tokens[0]](*tokens[1:])
         assert len(encoded) in (8, 16)
-        
-    output_lines.append(encoded)
+
+        if len(encoded) == 8:
+            output_lines.append(encoded)
+        else:
+            for e in (encoded[:8], encoded[8:]):
+                output_lines.append(e)
 
 
 # TODO: Implement command line arguments for filename and bin/hex
