@@ -19,6 +19,13 @@ class EmulatorInstructions:
         # a < b
         mask = 0b1000
         return bool(mask & result)
+    
+    def _readL4(self, addr):
+        return self.cpu.DataMemory[addr] & 0xF
+
+    def _writeL4(self, addr, val):
+        self.cpu.DataMemory[addr] = val & 0xF
+
 
     # instructions 1 - 16
     def _type1(self):
@@ -50,49 +57,49 @@ class EmulatorInstructions:
    
         
         elif self.cpu.instr.dec == 0b00000100: # 5. from-mba
-            self.cpu.RegFile['ACC'] = self.cpu.DataMemory[self.cpu.RBRA]
+            self.cpu.RegFile['ACC'] = self._readL4(self.cpu.RBRA)
         
         elif self.cpu.instr.dec == 0b00000101: # 6. to-mba
-            self.cpu.DataMemory[self.cpu.RBRA] = self.cpu.RegFile['ACC']
+            self._writeL4(self.cpu.RBRA, self.cpu.RegFile['ACC'])
         
         elif self.cpu.instr.dec == 0b00000110: # 7. from-mbc
-            self.cpu.RegFile['ACC'] = self.cpu.DataMemory[self.cpu.RDRC]
+            self.cpu.RegFile['ACC'] = self._readL4(self.cpu.RDRC)
         
         elif self.cpu.instr.dec == 0b00000111: # 8. to-mbc
-            self.cpu.DataMemory[self.cpu.RDRC] = self.cpu.RegFile['ACC']
+            self._writeL4(self.cpu.RDRC, self.cpu.RegFile['ACC'])
 
         elif self.cpu.instr.dec == 0b00001000: # 9. addc-mba
-            result = self.cpu.RegFile['ACC'] + self.cpu.DataMemory[self.cpu.RBRA] + self.cpu.RegFile['CF']
+            result = self.cpu.RegFile['ACC'] + self._readL4(self.cpu.RBRA) + self.cpu.RegFile['CF']
             self.cpu.RegFile['ACC'] = result
             self.cpu.RegFile['CF'] = self._overflow(result)
 
 
         elif self.cpu.instr.dec == 0b00001001: # 10. add-mba
-            result = self.cpu.RegFile['ACC'] + self.cpu.DataMemory[self.cpu.RDRC]
+            result = self.cpu.RegFile['ACC'] + self._readL4(self.cpu.RDRC)
             self.cpu.RegFile['ACC'] = result
             self.cpu.RegFile['CF'] = self._overflow(result)
 
         elif self.cpu.instr.dec == 0b00001010: # 11. subc-mba
-            result = self.cpu.RegFile['ACC'] - self.cpu.DataMemory[self.cpu.RBRA] + self.cpu.RegFile['CF']
+            result = self.cpu.RegFile['ACC'] - self._readL4(self.cpu.RBRA) + self.cpu.RegFile['CF']
             self.cpu.RegFile['ACC'] = result
             self.cpu.RegFile['CF'] = self._underflow(result)
 
         elif self.cpu.instr.dec == 0b00001011: # 12. sub-mba
-            result = self.cpu.RegFile['ACC'] - self.cpu.DataMemory[self.cpu.RBRA]
+            result = self.cpu.RegFile['ACC'] - self._readL4(self.cpu.RBRA)
             self.cpu.RegFile['ACC'] = result
             self.cpu.RegFile['CF'] = self._underflow(result)
 
         elif self.cpu.instr.dec == 0b00001100: # 13. inc*-mba
-            self.cpu.DataMemory[self.cpu.RBRA] = self.cpu.DataMemory[self.cpu.RBRA] + 1
+            self._writeL4(self.cpu.RBRA, self._readL4(self.cpu.RBRA) + 1)
         
         elif self.cpu.instr.dec == 0b00001101: # 14. dec*-mba
-            self.cpu.DataMemory[self.cpu.RBRA] = self.cpu.DataMemory[self.cpu.RBRA] - 1
+            self._writeL4(self.cpu.RBRA, self._readL4(self.cpu.RBRA) - 1)
 
         elif self.cpu.instr.dec == 0b00001110: # 15. inc*-mdc
-            self.cpu.DataMemory[self.cpu.RDRC] = self.cpu.DataMemory[self.cpu.RDRC] + 1
+            self._writeL4(self.cpu.RDRC, self._readL4(self.cpu.RDRC) + 1)
         
         elif self.cpu.instr.dec == 0b00001111: # 16. dec*-mdc
-            self.cpu.DataMemory[self.cpu.RDRC] = self.cpu.DataMemory[self.cpu.RDRC] - 1
+            self._writeL4(self.cpu.RDRC, self._readL4(self.cpu.RDRC) - 1)
         
         self.cpu.PC += 1
 
@@ -112,6 +119,7 @@ class EmulatorInstructions:
         elif reg_bits in dasm.registers and tag_bit == 1: # 18. dec*-reg
             reg_name = dasm.registers[reg_bits]
             self.cpu.RegFile[reg_name] -= 1
+
         elif self.cpu.instr == 0b00011010: # 19. and-ba
             accAndMem = self.cpu.RegFile['ACC'] & self.cpu.DataMemory[self.cpu.RBRA]
             self.cpu.RegFile['ACC'] = accAndMem

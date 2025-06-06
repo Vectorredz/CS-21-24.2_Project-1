@@ -412,7 +412,7 @@ class TestType1Instructions:
         self.assert_type(cpu, bin="00001100", dec=12, opcode="Type1")
 
         cpu.execute()
-        assert cpu.DataMemory[cpu.RBRA] == 16
+        assert cpu.DataMemory[cpu.RBRA] == 0 # truncate
 
     def test_dec_mba(self, cpu: Arch242Emulator):
         cpu.InstrMemory.extend(["00001101"])
@@ -462,7 +462,7 @@ class TestType1Instructions:
         self.assert_type(cpu, bin="00001110", dec=14, opcode="Type1")
 
         cpu.execute()
-        assert cpu.DataMemory[cpu.RDRC] == 16
+        assert cpu.DataMemory[cpu.RDRC] == 0
 
     def test_dec_mdc(self, cpu: Arch242Emulator):
         cpu.InstrMemory.extend(["00001111"])
@@ -490,3 +490,4 @@ class TestType1Instructions:
         assert cpu.DataMemory[cpu.RDRC] == 0
 
 class TestType2Instructions:
+    ...
