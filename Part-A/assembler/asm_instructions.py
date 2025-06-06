@@ -136,7 +136,7 @@ def _(): return "00101110"
 def _(): return "00101111"
 
 @new_i("from-ioa")
-def _(): return "00110000"
+def _(): return "00110010"
 
 @new_i("inc")
 def _(): return "00110001"

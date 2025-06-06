@@ -10,7 +10,7 @@ instruction_map: dict[str, Callable] = {}
 registers = {"000": "RA", 
              "001": "RB", 
              "010": "RC", 
-             "O11" : "RD", 
+             "011" : "RD", 
              "100": "RE"}
 
 bin_registers = [0b000, 0b001, 0b010, 0b011, 0b100]
@@ -27,24 +27,29 @@ branches = {
     "b-timer" : "11010",
     "bnz-d" : "11011"
 }
+
+jump_or_branch = ["ret", "bnz-a", "bnz-b", "beqz", "b-bit", "bnez", "beqz-cf", "bnez-cf", "bnz-d", "b", "call"]
+
 instr_type = {
     "0000": "Type1",
     "0001": "Type2",
-    "0011": "Type3",
-    "0100": "Type4",
-    "0101": "Type5",
-    "0110": "type6",
-    "0111": "Type7",
-    "100X": "Type8",
-    "1010": "Type9",
-    "1011": "Type10",
-    "1100": "Type11",
-    "1101": "Type12",
-    "1110": "Type13",
-    "1111": "Type14"
+    "0010": "Type3",
+    "0011": "Type4",
+    "0100": "Type5",
+    "0101": "Type6",
+    "0110": "type7",
+    "0111": "Type8",
+    "100X": "Type9",
+    "1010": "Type10",
+    "1011": "Type11",
+    "1100": "Type12",
+    "1101": "Type13",
+    "1110": "Type14",
+    "1111": "Type15"
+
 }
 
-instr_16_bit = ["Type4", "Type8", "Type9", "Type10", "Type11", "Type12", "Type13", "Type14"]
+instr_16_bit = ["Type5", "Type8", "Type9",  "Type10", "Type11", "Type12", "Type13", "Type14"]
 
 from_operation = {
     "add" : "01000000",
@@ -183,6 +188,8 @@ def _(): return "from-pa"
 
 @dasm("00110001")
 def _(): return "inc"
+
+# type 4
 
 @dasm("00110010")
 def _(): return "to-ioa"

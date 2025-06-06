@@ -1,6 +1,1 @@
-nop
-nop
-nop
-nop
-start:
-    bnez start
+add 15

@@ -13,6 +13,10 @@ def to_bin(value, bits):
         num = 0
     return format(num & ((1 << bits) - 1), f'0{bits}b')
 
+def to_strbin(num: str):
+    """Convert to binary string for easy conversion"""
+    return f"0b{num}"
+
 def is_label(line):
     """Check if line is a label definition"""
     return line.endswith(':')

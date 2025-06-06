@@ -13,9 +13,8 @@ ASM_PATH = BASE_DIR / "assembler" / "asm_assembler.py"
 
 """
 TODO:
-    - HUD
-    - test instructions
-# """
+    - Allows 2C or SignedM?
+"""
 
 @dataclass
 class EmulatorState:
@@ -28,12 +27,36 @@ class Instructions:
     opcode: str # first 4-bits 
     bin: str 
     dec: str
+    is_branch: bool
 
 @dataclass
 class MatrixCell:
     memAddr: int
     mapbit: int
     state: int
+
+class RegisterFile:
+    def __init__(self):
+        self.REG = {
+            'RA': 0, 'RB': 0, 'RC': 0, 'RD': 0,
+            'RE': 0, 'RF': 0, 'ACC': 0, 'CF': 0, 
+            'IOA': 0
+        }
+    def __getitem__(self, key):
+        return self.REG[key]
+
+    def __setitem__(self, key, value):
+        if key == 'CF':
+            self.REG[key] = value & 0x1  
+        else:
+            # assumes signed
+            self.REG[key] = value if (value < 0) else value & 0xF  
+
+    def get(self, key, default=None):
+        return self.REG.get(key, default)
+
+    def __repr__(self):
+        return repr(self.REG)
 
 class DataMemory:
     def __init__(self, size=2**emu_u.MEM_BITS):
@@ -45,7 +68,7 @@ class InstructionMemory:
     def __init__(self, size=2**emu_u.INSTR_BITS):
         self.mem: list[int] = [0x000] * size
         self.addr: int = 0x0000 # 16-bit instruction address
-
+        self.instr_16: bool = False
         # --- a 1D array of instruction memory
 
 class Pyxel:
@@ -225,15 +248,16 @@ class Pyxel:
         self._draw_title()
 
 class Arch242Emulator: # CPU
-    def __init__(self):  
+    def __init__(self) -> None:  
         # # --- Special Registers,General Purpose Registers, I/O # Registers
-        self.PC: int = 0
-        reg_names: list[int] = ['ACC', 'CF','TEMP','RA','RB','RC','RD','RE', 'IOA']
-        self.RegFile: dict[str, int] = {name: 0 for name in reg_names}
+        self.PC: int = 0x0000
+        self.TEMP: int = 0x0000
+        self.IMM: int = 0x000
+        self.RegFile: RegisterFile = RegisterFile()
+
         self.CFACC: int = 0
-        self.RBRA: int = 0
+        self.RBRA: int = 0b1100
         self.RDRC: int = 0
-        self.RegFile['ACC'] = 0b1
 
         # Init System
         self.clock_cycle: int = 0
@@ -246,9 +270,8 @@ class Arch242Emulator: # CPU
         self.InstMem = InstructionMemory()
         self.load_instructions()
         
-    def clock_tick(self):
-        self.instr = self.fetch()
-        print(self.instr)
+    def clock_tick(self) -> None:
+        self.instr: str = self.fetch()
         self.iohardware()
         if (self.instr):
             self.decode()
@@ -258,7 +281,7 @@ class Arch242Emulator: # CPU
         
         return
     
-    def load_instructions(self):
+    def load_instructions(self) -> None:
         # Run the assembler first 
         
         subprocess.run(["python", ASM_PATH], check=True)
@@ -275,28 +298,29 @@ class Arch242Emulator: # CPU
                 self.InstMem.addr += 1
         return
         
-    def fetch(self):
+    def fetch(self) -> str:
         if (self.InstMem.mem):
-            instruction = self.InstMem.mem[self.PC]
+            instruction: str = self.InstMem.mem[self.PC]
             return instruction
         
-    def decode(self):
-        opcode_bits = self.instr[:4]
+    def decode(self) -> None:
+   
+        opcode_bits = "100X" if self.instr[:4] == "1001" or self.instr[:4] == "1000" else self.instr[:4]
 
-        opcode_bits = "100X" if opcode_bits == "1001" or opcode_bits == "1000" else opcode_bits
+        type: str = dasm.instr_type[opcode_bits]
 
-        type = dasm.instr_type[opcode_bits]
-        
         if type in dasm.instr_16_bit or self.instr == "00110111": # shutdown
             self.PC += 1 # essentially pc += 2 
+            # self.InstMem.instr_16 = True
             self.instr += self.fetch() # 16 bit instruction
         else: 
             self.instr = self.instr # pc += 1
 
-        self.instr: Instructions = Instructions(type, self.instr, int(asm_u.to_strbin(self.instr), 2))
-        # print(dasm.instruction_map[self.instr.bin]())        
+        token: str = dasm.instruction_map[self.instr]().split()[0]
+        is_branch = True if token in dasm.jump_or_branch else False
+        self.instr: Instructions = Instructions(type, self.instr, int(asm_u.to_strbin(self.instr), 2), is_branch)
         
-    def execute(self): # alu
+    def execute(self) -> None: # alu
         match (self.instr.opcode):
             case "Type1":
                 self.emu_i._type1()
@@ -307,7 +331,9 @@ class Arch242Emulator: # CPU
             case "Type4":
                 self.emu_i._type4()
             case "Type5":
+                # print(self.RegFile['ACC'])
                 self.emu_i._type5()
+                # print(self.RegFile['ACC'])
             case "Type6":
                 self.emu_i._type6()
             case "Type7":
@@ -326,14 +352,17 @@ class Arch242Emulator: # CPU
                 self.emu_i._type13()
             case "Type14":
                 self.emu_i._type14()
+            case "Type15":
+                self.emu_i._type15()
 
-    def iohardware(self):
+    def iohardware(self) -> None:
         self.RegFile['IOA'] = self.RegFile['IOA'] | 0b0001 if pyxel.btn(pyxel.KEY_UP) else self.RegFile['IOA'] & 0b1110
         self.RegFile['IOA'] = self.RegFile['IOA'] | 0b0010 if pyxel.btn(pyxel.KEY_DOWN) else self.RegFile['IOA'] & 0b1101
         self.RegFile['IOA'] = self.RegFile['IOA'] | 0b0100 if pyxel.btn(pyxel.KEY_LEFT) else self.RegFile['IOA'] & 0b1011
         self.RegFile['IOA'] = self.RegFile['IOA'] | 0b1000 if pyxel.btn(pyxel.KEY_RIGHT) else self.RegFile['IOA'] & 0b0111
 
         # print(self.RegFile['IOA'])
+
 def main():
     cpu = Arch242Emulator()
     Pyxel(cpu)
