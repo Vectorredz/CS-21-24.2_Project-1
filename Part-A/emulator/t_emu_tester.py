@@ -489,5 +489,5 @@ class TestType1Instructions:
         cpu.execute()
         assert cpu.DataMemory[cpu.RDRC] == 0
 
-class TestType2Instructions:
-    ...
+# class TestType2Instructions:
+#     def test_inc_reg():

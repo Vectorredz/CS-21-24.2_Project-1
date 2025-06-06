@@ -1,10 +1,22 @@
-def fix_width(num: str, digits: int, ext: str): # extends
-    assert len(num) <= digits
-    return (ext * (digits-len(num))) + num
-def to_bin(num: str, bits: int):
-    num = int(num)
-    assert len(bin(num)[2:]) <= bits
-    num = format(num, f"0{bits}b")
-    return num
-def to_strbin(num: str):
-    return f"0b{num}"
+def fix_width(value, width, pad_char='0'):
+    """Ensure a string has specific width by padding or truncating"""
+    value = str(value)
+    if len(value) > width:
+        return value[-width:]
+    return value.rjust(width, pad_char)
+
+def to_bin(value, bits):
+    """Convert integer or numeric string to binary string of given bits"""
+    try:
+        num = int(value)
+    except ValueError:
+        num = 0
+    return format(num & ((1 << bits) - 1), f'0{bits}b')
+
+def is_label(line):
+    """Check if line is a label definition"""
+    return line.endswith(':')
+
+def get_label_name(line):
+    """Extract label name from label definition"""
+    return line[:-1].strip()

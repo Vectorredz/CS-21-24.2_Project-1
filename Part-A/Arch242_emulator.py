@@ -37,12 +37,15 @@ class MatrixCell:
 
 class DataMemory:
     def __init__(self, size=2**emu_u.MEM_BITS):
-        self.Data: list[int] = [0] * size
+        self.mem: list[int] = [0x00] * size
+        self.addr: int = 0x00 # 8-bit memory address
         # --- a 1D array of data memory
 
-class InstrMemory:
+class InstructionMemory:
     def __init__(self, size=2**emu_u.INSTR_BITS):
-        self.Instruction: list[int] = []
+        self.mem: list[int] = [0x000] * size
+        self.addr: int = 0x0000 # 16-bit instruction address
+
         # --- a 1D array of instruction memory
 
 class Pyxel:
@@ -84,7 +87,6 @@ class Pyxel:
                 if (cell.memAddr == mem_addr) & (cell.mapbit == val):
                     self.led_matrix[row][col].state = 1
                 
-
     def print_matrix(self):
         for row in self.led_matrix:
             print("".join("1" if cell.state else "0" for cell in row))  
@@ -168,8 +170,12 @@ class Pyxel:
 
         # Instruction and PC
         pyxel.text(left + 10, top, "INSTRUCTION:", text_color)
-        pyxel.text(left + 90, top + line_height, f"{self.emulator.instr.bin}", text_color)
-        pyxel.text(left + 90, top, f"{dasm.instruction_map[self.emulator.instr.bin]()}", text_color)
+        
+        if (self.emulator.instr):
+            pyxel.text(left + 90, top + line_height, f"{self.emulator.instr.bin}", text_color)
+            pyxel.text(left + 90, top, f"{dasm.instruction_map[self.emulator.instr.bin]()}", text_color)
+        else:
+            pyxel.text(left + 90, top, "no fetched", text_color)
 
         pyxel.text(left + 10, top + 2 *  line_height, "PROGRAM COUNTER:", text_color)
         pyxel.text(left + 110, top + 2 * line_height, f"{self.emulator.PC}", text_color)
@@ -187,10 +193,6 @@ class Pyxel:
             y = top + i * line_height
             value = self.emulator.RegFile.get(reg, 0)
             pyxel.text(bar_x + 10, y, f"{reg}: {value:02X}", text_color)
-
-
-
-
 
     def _draw_hud(self):
         # Clear HUD area (keep original background)
@@ -240,13 +242,13 @@ class Arch242Emulator: # CPU
 
         # Instantiation
         self.emu_i = EmulatorInstructions(self)
-        self.DataMemory = DataMemory().Data
-        self.InstrMemory = InstrMemory().Instruction
+        self.DataMem = DataMemory()
+        self.InstMem = InstructionMemory()
+        self.load_instructions()
         
     def clock_tick(self):
-        # brief pause to start the game
-        self.load_instructions()
         self.instr = self.fetch()
+        print(self.instr)
         self.iohardware()
         if (self.instr):
             self.decode()
@@ -258,21 +260,26 @@ class Arch242Emulator: # CPU
     
     def load_instructions(self):
         # Run the assembler first 
+        
         subprocess.run(["python", ASM_PATH], check=True)
 
         with open(Path(emu_u.PATH), "r") as f:
             assembled = f.readlines()
 
         for line in assembled:
-            self.DataMemory.append(line.strip()) if (line[:5] == ".byte") else self.InstrMemory.append(line.strip())
+            if (line[:5] == ".byte"):
+                self.DataMem.Data[self.DataMem.addr] = line.strip()
+                self.DataMem.addr += 1
+            else: 
+                self.InstMem.mem[self.InstMem.addr] = line.strip()
+                self.InstMem.addr += 1
         return
         
     def fetch(self):
-        if (self.InstrMemory):
-            instruction = self.InstrMemory[self.PC]
+        if (self.InstMem.mem):
+            instruction = self.InstMem.mem[self.PC]
             return instruction
         
-    
     def decode(self):
         opcode_bits = self.instr[:4]
 
@@ -281,10 +288,10 @@ class Arch242Emulator: # CPU
         type = dasm.instr_type[opcode_bits]
         
         if type in dasm.instr_16_bit or self.instr == "00110111": # shutdown
-            self.PC += 1
+            self.PC += 1 # essentially pc += 2 
             self.instr += self.fetch() # 16 bit instruction
         else: 
-            self.instr = self.instr
+            self.instr = self.instr # pc += 1
 
         self.instr: Instructions = Instructions(type, self.instr, int(asm_u.to_strbin(self.instr), 2))
         # print(dasm.instruction_map[self.instr.bin]())        

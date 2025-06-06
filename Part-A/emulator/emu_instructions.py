@@ -21,10 +21,10 @@ class EmulatorInstructions:
         return bool(mask & result)
     
     def _readL4(self, addr):
-        return self.cpu.DataMemory[addr] & 0xF
+        return self.cpu.DataMemory.mem[addr] & 0xF
 
     def _writeL4(self, addr, val):
-        self.cpu.DataMemory[addr] = val & 0xF
+        self.cpu.DataMemory.mem[addr] = val & 0xF
 
 
     # instructions 1 - 16
@@ -121,27 +121,27 @@ class EmulatorInstructions:
             self.cpu.RegFile[reg_name] -= 1
 
         elif self.cpu.instr == 0b00011010: # 19. and-ba
-            accAndMem = self.cpu.RegFile['ACC'] & self.cpu.DataMemory[self.cpu.RBRA]
+            accAndMem = self.cpu.RegFile['ACC'] & self._readL4(self.cpu.RBRA)
             self.cpu.RegFile['ACC'] = accAndMem
 
         elif self.cpu.instr == 0b00011011: # 20. xor-ba
-            accXorMem = self.cpu.RegFile['ACC'] ^ self.cpu.DataMemory[self.cpu.RBRA]
+            accXorMem = self.cpu.RegFile['ACC'] ^ self._readL4(self.cpu.RBRA)
             self.cpu.RegFile['ACC'] = accXorMem
         
         elif self.cpu.instr == 0b00011100: # 21. or-ba
-            accOrMem = self.cpu.RegFile['ACC'] | self.cpu.DataMemory[self.cpu.RBRA]
+            accOrMem = self.cpu.RegFile['ACC'] | self._readL4(self.cpu.RBRA)
             self.cpu.RegFile['ACC'] = accOrMem
 
         elif self.cpu.instr == 0b00011101: # 22. and*-mba
-            memAndAcc = self.cpu.RegFile['ACC'] & self.cpu.DataMemory[self.cpu.RBRA]
+            memAndAcc = self.cpu.RegFile['ACC'] & self._readL4(self.cpu.RBRA)
             self.cpu.DataMemory[self.cpu.RBRA] = memAndAcc
         
         elif self.cpu.instr == 0b00011110: # 23. xor*-mba
-            memXorAcc = self.cpu.RegFile['ACC'] ^ self.cpu.DataMemory[self.cpu.RBRA]
+            memXorAcc = self.cpu.RegFile['ACC'] ^ self._readL4(self.cpu.RBRA)
             self.cpu.DataMemory[self.cpu.RBRA] = memXorAcc
         
         elif self.cpu.instr == 0b00011111: # 24. or*-mba
-            memOrAcc = self.cpu.RegFile['ACC'] | self.cpu.DataMemory[self.cpu.RBRA]
+            memOrAcc = self.cpu.RegFile['ACC'] | self._readL4(self.cpu.RBRA)
             self.cpu.DataMemory[self.cpu.RBRA] = memOrAcc
         
         self.cpu.PC += 1
