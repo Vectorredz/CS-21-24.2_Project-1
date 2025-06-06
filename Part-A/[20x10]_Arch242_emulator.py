@@ -155,6 +155,9 @@ class Arch242Emulator: # CPU
         # # --- Special Registers,General Purpose Registers, I/O Registers
         self.PC: int = 0
         reg_names: list[int] = ['ACC', 'CF','TEMP','RA','RB','RC','RD','RE', 'IOA']
+        self.rbra: int = 0
+        self.rdrc: int = 0
+
         self.RegFile: dict[str, int] = {name: 0 for name in reg_names}
         self.clock_cycle: int = 0
         self.emuState = EmulatorState(False, False)

@@ -25,7 +25,7 @@ class EmulatorState:
 @dataclass
 class Instructions:
 # --- Instruction class
-    opcode: str # last 4-bits 
+    opcode: str # first 4-bits 
     bin: str 
     dec: str
 
@@ -37,7 +37,7 @@ class MatrixCell:
 
 class DataMemory:
     def __init__(self, size=2**emu_u.MEM_BITS):
-        self.Data: list[int] = []
+        self.Data: list[int] = [0] * size
         # --- a 1D array of data memory
 
 class InstrMemory:
@@ -58,7 +58,7 @@ class Pyxel:
         self.score = 0 
         self._build_matrix()
         # self.print_matrix()
-        pyxel.init(self.screen_width, self.screen_height, fps=30)
+        pyxel.init(self.screen_width, self.screen_height, fps=1)
         pyxel.load(str(Path("assets/snake.pyxres")))
         pyxel.run(self.update, self.draw)
 
@@ -114,6 +114,7 @@ class Pyxel:
                     pyxel.blt(x,y,0,16,88,16,16)
                 # pyxel.rectb(x, y, emu_u.DIM, emu_u.DIM, 0)
         # self._draw_snake(offset_x  * emu_u.DIM, offset_y  * emu_u.DIM)
+
     def _draw_title(self):
            # S
         pyxel.blt(self.mid - 72, 2, 0, 0,24,16,16)
@@ -141,9 +142,58 @@ class Pyxel:
         text_width = len(text) * 4  
         return ((emu_u.SCREEN_WIDTH) - text_width) // 2
 
+    def _draw_benchmark(self):
+        # Layout constants
+        left = emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH
+        top = emu_u.GAME_HEIGHT
+        line_height = 8
+        text_color = 7
+        bg_color = 0
+        border_color = 7
+
+        # Determine the far-right drawing position for register values
+        bar_x = left + 165
+        content_right = bar_x + 70  # Enough for "|   REG: VALUE"
+
+        panel_width = content_right - left + 10  # Slight margin to the right
+        panel_height = emu_u.SCREEN_HEIGHT - top + 20
+
+        # Draw border and background fill
+        pyxel.rectb(left, top - 20, panel_width - 25, panel_height, border_color)
+        pyxel.rect(left + 1, top - 19, panel_width - 40, panel_height - 2, bg_color)
+
+        # Header
+        pyxel.text(left + 10, top - 14, "Arch242 CPU Emulator", text_color)
+        pyxel.text(left + 8, top - 8, "-" * 49, text_color)
+
+        # Instruction and PC
+        pyxel.text(left + 10, top, "INSTRUCTION:", text_color)
+        pyxel.text(left + 90, top + line_height, f"{self.emulator.instr.bin}", text_color)
+        pyxel.text(left + 90, top, f"{dasm.instruction_map[self.emulator.instr.bin]()}", text_color)
+
+        pyxel.text(left + 10, top + 2 *  line_height, "PROGRAM COUNTER:", text_color)
+        pyxel.text(left + 110, top + 2 * line_height, f"{self.emulator.PC}", text_color)
+
+        pyxel.text(left + 10, top + 3 * line_height, "CPU CLOCK CYCLE:", text_color)
+        # pyxel.text(left + 110, top + 2 * line_height, f"{self.emulator.clock}", text_color)
+
+        # Visual register marker
+        for i in range(7):  # enough for RA–CF
+            pyxel.text(bar_x, top + i * line_height, "|", text_color)
+
+        # Register display beside the markers
+        reg_labels = ["RA", "RB", "RC", "RD", "RE", "ACC", "CF"]
+        for i, reg in enumerate(reg_labels):
+            y = top + i * line_height
+            value = self.emulator.RegFile.get(reg, 0)
+            pyxel.text(bar_x + 10, y, f"{reg}: {value:02X}", text_color)
+
+
+
+
+
     def _draw_hud(self):
         # Clear HUD area (keep original background)
-        pyxel.rectb(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH, emu_u.GAME_HEIGHT - 20, 200, emu_u.SCREEN_HEIGHT - emu_u.GAME_HEIGHT + 20, 7)
         pyxel.rect(-emu_u.SYS_WIDTH, emu_u.GAME_HEIGHT - 20, emu_u.SCREEN_WIDTH, emu_u.SCREEN_HEIGHT, 1)
 
         # --- LEFT: INSTRUCTIONS (unchanged) ---
@@ -165,45 +215,30 @@ class Pyxel:
         # LED OFF
         pyxel.blt(center_left - 20, emu_u.GAME_HEIGHT + 36, 0, 16, 88, 16, 16, 0)
         pyxel.text(center_left, emu_u.GAME_HEIGHT + 40, "LED OFF:", 7)
-
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 10, emu_u.GAME_HEIGHT - 14, "Arch242 CPU Emulator", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 8, emu_u.GAME_HEIGHT - 8, "---------------------------------------------", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 10, emu_u.GAME_HEIGHT, "INSTRUCTION: ", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 10, emu_u.GAME_HEIGHT + 8, "PROGRAM COUNTER: ", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 10, emu_u.GAME_HEIGHT + 16, "CPU CLOCK CYCLE: ", 7)
-
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT, "|", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT + 6, "|", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT + 12, "|", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT + 18, "|", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT + 24, "|", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT + 30, "|", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT + 36, "|", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT + 42, "|", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 120, emu_u.GAME_HEIGHT + 48, "|", 7)
-
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 130, emu_u.GAME_HEIGHT, "RA: ", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 130, emu_u.GAME_HEIGHT + 8, "RB: ", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 130, emu_u.GAME_HEIGHT + 16, "RC: ", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 130, emu_u.GAME_HEIGHT + 24, "RD: ", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 130, emu_u.GAME_HEIGHT + 32, "RE: ", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 130, emu_u.GAME_HEIGHT + 40, "ACC: ", 7)
-        pyxel.text(emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH + 130, emu_u.GAME_HEIGHT + 48, "CF: ", 7)
         
-    
     def draw(self):
         self._draw_cell()
         self._draw_hud()
+        self._draw_benchmark()
         self._draw_title()
 
 class Arch242Emulator: # CPU
     def __init__(self):  
-        # # --- Special Registers,General Purpose Registers, I/O Registers
+        # # --- Special Registers,General Purpose Registers, I/O # Registers
         self.PC: int = 0
         reg_names: list[int] = ['ACC', 'CF','TEMP','RA','RB','RC','RD','RE', 'IOA']
         self.RegFile: dict[str, int] = {name: 0 for name in reg_names}
+        self.CFACC: int = 0
+        self.RBRA: int = 0
+        self.RDRC: int = 0
+        self.RegFile['ACC'] = 0b1
+
+        # Init System
         self.clock_cycle: int = 0
+        self.instr: str = " "
         self.emuState = EmulatorState(False, False)
+
+        # Instantiation
         self.emu_i = EmulatorInstructions(self)
         self.DataMemory = DataMemory().Data
         self.InstrMemory = InstrMemory().Instruction
@@ -234,8 +269,9 @@ class Arch242Emulator: # CPU
         
     def fetch(self):
         if (self.InstrMemory):
-            instruction = self.InstrMemory[self.PC] 
+            instruction = self.InstrMemory[self.PC]
             return instruction
+        
     
     def decode(self):
         opcode_bits = self.instr[:4]
@@ -243,14 +279,15 @@ class Arch242Emulator: # CPU
         opcode_bits = "100X" if opcode_bits == "1001" or opcode_bits == "1000" else opcode_bits
 
         type = dasm.instr_type[opcode_bits]
-
+        
         if type in dasm.instr_16_bit or self.instr == "00110111": # shutdown
             self.PC += 1
             self.instr += self.fetch() # 16 bit instruction
         else: 
             self.instr = self.instr
 
-        self.instr = Instructions(type, self.instr, int(asm_u.to_strbin(self.instr), 2))
+        self.instr: Instructions = Instructions(type, self.instr, int(asm_u.to_strbin(self.instr), 2))
+        # print(dasm.instruction_map[self.instr.bin]())        
         
     def execute(self): # alu
         match (self.instr.opcode):

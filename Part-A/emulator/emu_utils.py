@@ -7,7 +7,7 @@ INSTR_4 = 4
 SCREEN_WIDTH = 380
 SCREEN_HEIGHT = 280
 GAME_HEIGHT = 220
-SYS_WIDTH = 200
+SYS_WIDTH = 220
 
 DIM = 16
 BASE_DIR = Path(__file__).resolve().parent.parent

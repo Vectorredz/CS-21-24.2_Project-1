@@ -1,6 +1,7 @@
 from typing import Callable
 from pathlib import Path
 from sys import argv
+import assembler.asm_utils as asm_u
 
 type InstEncoder = Callable
 
@@ -229,7 +230,7 @@ def _(): return "dec"
 def localizer(binary, ar, imm):
     @dasm(binary)
     def _(): 
-        return f"{ar} {imm}"
+        return f"{ar} {int(asm_u.to_strbin(imm), 2)}"
         
 for ar in from_operation.keys():
     for imm in immediates_4:
