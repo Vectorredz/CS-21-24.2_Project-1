@@ -247,15 +247,15 @@ def _(): return "01001111"
 @new_i("rarb")
 def _(imm):
     imm = to_bin(imm, 8)
-    YYYY = imm[:5]
-    XXXX = imm[5:]
+    YYYY = imm[:4]
+    XXXX = imm[4:]
     return f"0101{XXXX}0000{YYYY}"
 
 @new_i("rcrd")
 def _(imm):
     imm = to_bin(imm, 8)
-    YYYY = imm[:5]
-    XXXX = imm[5:]
+    YYYY = imm[:4]
+    XXXX = imm[4:]
     return f"0110{XXXX}0000{YYYY}"
 
 # ======================================================

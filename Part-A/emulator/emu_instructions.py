@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 import emulator.disassembler as dasm
 import emulator.emu_utils as emu_u
@@ -9,26 +8,26 @@ import os
 # TODO: 2C OR SIGNED?
 
 class EmulatorInstructions:
-    def __init__(self, cpu):
+    def __init__(self, cpu) -> None:
         self.cpu = cpu
 
-    def _overflow(self, result):
+    def _overflow(self, result: int) -> bool:
         mask = 0b10000
         return bool(mask & result)
     
-    def _truncate(self, result):
+    def _truncate(self, result: int) -> int:
         return result & 0xF
 
-    def _underflow(self, result):
+    def _underflow(self, result: int) -> bool:
         # if msb is 1 there is an underflow // assumes signed borrow
         # a < b
         mask = 0b1000
         return bool(mask & result)
     
-    def _readL4(self, addr):
+    def _readL4(self, addr: int) -> int:
         return self._truncate(self.cpu.DataMem.mem[addr])
 
-    def _writeL4(self, addr, val):
+    def _writeL4(self, addr: int, val: int) -> None:
         self.cpu.DataMem.mem[addr] = self._truncate(val) & 0xF
 
     def _PCNext(self, is_branch: bool) -> None:
@@ -38,6 +37,7 @@ class EmulatorInstructions:
     def _type1(self):
         self.cpu.RBRA = self.cpu.RegFile['RB'] << (emu_u.INSTR_4) | self.cpu.RegFile['RA']
         self.cpu.RDRC = self.cpu.RegFile['RD'] << (emu_u.INSTR_4) | self.cpu.RegFile['RC']
+        
         if self.cpu.instr.dec == 0b00000000: # 1. rot-r
             dacc = self.cpu.RegFile['ACC'] >> 1
             self.cpu.RegFile['ACC'] = ((self.cpu.RegFile['ACC'] & 0b1) << (emu_u.INSTR_4-1)) | dacc
@@ -61,7 +61,6 @@ class EmulatorInstructions:
             # update          
             self.cpu.RegFile['CF'] = (self.cpu.CFACC >> 4) & 0b1                
             self.cpu.RegFile['ACC'] = self.cpu.CFACC & 0b1111                    
-   
         
         elif self.cpu.instr.dec == 0b00000100: # 5. from-mba
             self.cpu.RegFile['ACC'] = self._readL4(self.cpu.RBRA)
@@ -79,7 +78,6 @@ class EmulatorInstructions:
             result = self.cpu.RegFile['ACC'] + self._readL4(self.cpu.RBRA) + self.cpu.RegFile['CF']
             self.cpu.RegFile['ACC'] = result
             self.cpu.RegFile['CF'] = self._overflow(result)
-
 
         elif self.cpu.instr.dec == 0b00001001: # 10. add-mba
             result = self.cpu.RegFile['ACC'] + self._readL4(self.cpu.RDRC)
@@ -222,28 +220,29 @@ class EmulatorInstructions:
         key_op = asm_u.to_bin(op, emu_u.INSTR_8)
         match (dasm.to_operation[key_op]):
             case "add": # 49 add <self.cpu.IMM>	
-                self.cpu.RegFile['ACC'] = 11
-        #         # break;
-        #     # case "sub": # 50 sub <self.cpu.IMM>
-        #     #     self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] - self.cpu.IMM
-        #     # case "and": # 51 and s<self.cpu.IMM>
-        #     #     self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] & self.cpu.IMM
-        #     # case "xor": # 52 xor <self.cpu.IMM>
-        #     #     self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] ^ self.cpu.IMM
-        #     # case "or": # 53 or <self.cpu.IMM>
-        #     #     self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] | self.cpu.IMM
-        #     # case "r4": # 55 r4 <self.cpu.IMM>
-        #     #     self.cpu.RegFile['RE'] = self.cpu.IMM
+                self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] + self.cpu.IMM
+                self.cpu.RegFile['CF'] = self._overflow(self.cpu.RegFile['ACC'])
+                self.cpu.RegFile['ACC'] = self._truncate(self.cpu.RegFile['ACC'])
+            case "sub": # 50 sub <self.cpu.IMM>
+                self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] - self.cpu.IMM
+            case "and": # 51 and s<self.cpu.IMM>
+                self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] & self.cpu.IMM
+            case "xor": # 52 xor <self.cpu.IMM>
+                self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] ^ self.cpu.IMM
+            case "or": # 53 or <self.cpu.IMM>
+                self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] | self.cpu.IMM
+            case "r4": # 55 r4 <self.cpu.IMM>
+                self.cpu.RegFile['RE'] = self.cpu.IMM
                 
         self._PCNext(self.cpu.instr.is_branch)
 
         return 
 
-    # instructions 65 rarb <imm>
+    # instructions 65 rarb <self.cpu.IMM>
     def _type6(self):
-        rb_imm = int(self.cpu.instr.bin[12:], 2) << 4
-        ra_imm = int(self.cpu.instr.bin[4:8] , 2)
-        imm = rb_imm | ra_imm
+        rb_imm = int(asm_u.to_strbin(self.cpu.instr.bin[12:]), 2) << 4
+        ra_imm = int(asm_u.to_strbin(self.cpu.instr.bin[4:8]) , 2)
+        self.cpu.IMM = rb_imm | ra_imm
 
         self.cpu.RegFile['RA'] = ra_imm
         self.cpu.RegFile['RB'] = rb_imm
@@ -252,11 +251,11 @@ class EmulatorInstructions:
 
         return 
 
-    # instructions 66 rcrd <imm>
+    # instructions 66 rcrd <self.cpu.IMM>
     def _type7(self):
-        rc_imm = int(self.cpu.instr.bin[12:], 2) << 4
-        rd_imm = int(self.cpu.instr.bin[4:8] , 2)
-        imm = rc_imm | rd_imm
+        rc_imm = int(asm_u.to_strbin(self.cpu.instr.bin[12:]), 2) << 4
+        rd_imm = int(asm_u.to_strbin(self.cpu.instr.bin[4:8]) , 2)
+        self.cpu.IMM = rc_imm | rd_imm
 
         self.cpu.RegFile['RC'] = rc_imm
         self.cpu.RegFile['RD'] = rd_imm
@@ -265,62 +264,66 @@ class EmulatorInstructions:
 
         return 
 
-    # instructions 67 acc <imm>
+    # instructions 67 acc <self.cpu.IMM>
     def _type8(self):
-        imm = self.cpu.instr & emu_u.HEX_8L4 # 67. acc <imm>	
-        self.cpu.RegFile['ACC'] = imm
+        self.cpu.IMM = self.cpu.instr.dec & emu_u.HEX_8L4 # 67. acc <self.cpu.IMM>	
+        self.cpu.RegFile['ACC'] = self.cpu.IMM
 
         self.cpu.PC += 1
 
         return 
 
-    # instructions 68 b-bit <k> <imm>
+    # instructions 68 b-bit <k> <self.cpu.IMM>
     def _type9(self):
-        k = int(self.cpu.instr.bin[3:5], 2)
-        b = int(self.cpu.instr.bin[5:8], 2)
-        a = int(self.cpu.instr.bin[8:], 2)    
-        imm = (b << 8) | (a)
+        k = int(self.cpu.instr.bin[4:6], 2)        # Bits 4–5: K (bit selector)
+        b = int(self.cpu.instr.bin[6:8], 2)        # Bits 6–7: B
+        a = int(self.cpu.instr.bin[8:], 2)         # Bits 8–15: A
+        self.cpu.IMM = (b << 8) | a                         # 11-bit immediate: BBBAAAAAAAA
 
-        if (self.cpu.PC & k == 1):
-            upperPC = self.cpu.PC & emu_u.HEX_16U5
-            self.cpu.PC = upperPC | imm
+        acc = self.cpu.RegFile["ACC"]            # Get ACC value
 
-        self.cpu.PC += 1
+        if ((acc >> k) & 1) == 1:
+            # Check if bit K of ACC is 1
+            upperPC = self.cpu.PC & emu_u.HEX_16U5        # Keep upper 5 bits of PC
+            self.cpu.PC = upperPC | self.cpu.IMM            # Replace lower 11 bits with self.cpu.IMM
+        else:
+            self.cpu.PC += 1          # Skip to next instruction
+        
+        self._PCNext(self.cpu.instr.is_branch)
 
-        return 
     # instructions 69 - 70
     def _type10(self):
         b = int(self.cpu.instr.bin[5:8], 2)
         a = int(self.cpu.instr.bin[8:], 2)    
-        imm = (b << 8) | (a)
+        self.cpu.IMM = (b << 8) | (a)
+        print(self.cpu.IMM)
         tag = self.cpu.instr.bin[4]
 
-        if (tag == 0):  # 69. bnz-a <imm>
+        if (tag == '0' and self.cpu.RegFile['RA'] != 0):  # 69. bnz-a <self.cpu.IMM>
             upperPC = self.cpu.PC & emu_u.HEX_16U5
-            self.cpu.PC = upperPC | imm
-        elif (tag == 1): # 70. bnz-b <imm>
+            self.cpu.PC = upperPC | self.cpu.IMM
+        elif (tag == '1' and self.cpu.RegFile['RB'] != 0): # 70. bnz-b <self.cpu.IMM>
             upperPC = self.cpu.PC & emu_u.HEX_16U5
-            self.cpu.PC = upperPC | imm
+            self.cpu.PC = upperPC | self.cpu.IMM
 
-        self.cpu.PC += 1
-
-        return   
+        self._PCNext(self.cpu.instr.is_branch)
+        # return   
 
     # instructions 71 - 72
     def _type11(self):
         b = int(self.cpu.instr.bin[5:8], 2)
         a = int(self.cpu.instr.bin[8:], 2)    
-        imm = (b << 8) | (a)
+        self.cpu.IMM = (b << 8) | (a)
         tag = self.cpu.instr.bin[4]
 
-        if (self.cpu.RegFile['ACC'] != 0 and tag == 0): # 71. beqz <imm>
+        if (tag == '0' and self.cpu.RegFile['ACC'] != 0): # 71. beqz <self.cpu.IMM>
             upperPC = self.cpu.PC & emu_u.HEX_16U5
-            self.cpu.PC = upperPC | imm
-        elif (self.cpu.RegFile['ACC'] == 0 and tag == 1): # 72. bnez <imm>
+            self.cpu.PC = upperPC | self.cpu.IMM
+        elif (tag == '1' and self.cpu.RegFile['ACC'] == 0): # 72. bnez <self.cpu.IMM>
             upperPC = self.cpu.PC & emu_u.HEX_16U5
-            self.cpu.PC = upperPC | imm
+            self.cpu.PC = upperPC | self.cpu.IMM
 
-        self.cpu.PC += 1
+        self._PCNext(self.cpu.instr.is_branch)
 
         return 
 
@@ -328,17 +331,17 @@ class EmulatorInstructions:
     def _type12(self):
         b = int(self.cpu.instr.bin[5:8], 2)
         a = int(self.cpu.instr.bin[8:], 2)    
-        imm = (b << 8) | (a)
+        self.cpu.IMM = (b << 8) | (a)
         tag = self.cpu.instr.bin[4]
 
-        if (self.cpu.RegFile['CF'] != 0 and tag == 0): # 73. beqz-cf <imm>
+        if (self.cpu.RegFile['CF'] != 0 and tag == '0'): # 73. beqz-cf <self.cpu.IMM>
             upperPC = self.cpu.PC & emu_u.HEX_16U5
-            self.cpu.PC = upperPC | imm
-        elif (self.cpu.RegFile['CF'] == 0 and tag == 1): # 74. bnez-cf <imm>
+            self.cpu.PC = upperPC | self.cpu.IMM
+        elif (self.cpu.RegFile['CF'] == 0 and tag == '1'): # 74. bnez-cf <self.cpu.IMM>
             upperPC = self.cpu.PC & emu_u.HEX_16U5
-            self.cpu.PC = upperPC | imm
+            self.cpu.PC = upperPC | self.cpu.IMM
         
-        self.cpu.PC += 1
+        self._PCNext(self.cpu.instr.is_branch)
 
         return 
 
@@ -346,40 +349,40 @@ class EmulatorInstructions:
     def _type13(self):
         b = int(self.cpu.instr.bin[5:8], 2)
         a = int(self.cpu.instr.bin[8:], 2)    
-        imm = (b << 8) | (a)
+        self.cpu.IMM = (b << 8) | (a)
         tag = self.cpu.instr.bin[4]
 
-        if (self.cpu.RegFile['RD'] != 0 and tag == 1): # 76. bnez-cf <imm>
+        if (self.cpu.RegFile['RD'] != 0 and tag == '1'): # 76. bnz-d <self.cpu.IMM>
             upperPC = self.cpu.PC & emu_u.HEX_16U5
-            self.cpu.PC = upperPC | imm
+            self.cpu.PC = upperPC | self.cpu.IMM
         
-        self.cpu.PC += 1
+        self._PCNext(self.cpu.instr.is_branch)
 
         return 
 
-    # instructions 77
+    # instructions 77  -> 77. b <imm>
     def _type14(self):
         b = int(self.cpu.instr.bin[4:8], 2)
         a = int(self.cpu.instr.bin[8:], 2)    
-        imm = (b << 8) | (a)
+        self.cpu.IMM = (b << 8) | (a)
 
         upperPC = self.cpu.PC & emu_u.HEX_16U4
-        self.cpu.PC = upperPC | imm
+        self.cpu.PC = upperPC | self.cpu.IMM
 
-        self.cpu.PC += 1
+        self._PCNext(self.cpu.instr.is_branch)
 
         return 
 
-    # instructions 78
+    # instructions 78 -> 78. call <imm> 
     def _type15(self):
         b = int(self.cpu.instr.bin[4:8], 2)
         a = int(self.cpu.instr.bin[8:], 2)    
-        imm = (b << 8) | (a)
+        self.cpu.IMM = (b << 8) | (a)
 
         self.cpu.TEMP = self.cpu.PC + 2
         upperPC = self.cpu.PC & emu_u.HEX_16U4
-        self.cpu.PC = upperPC | imm
+        self.cpu.PC = upperPC | self.cpu.IMM
 
-        self.cpu.PC += 1
+        self._PCNext(self.cpu.instr.is_branch)
 
         return 
