@@ -3,7 +3,10 @@ from asm_utils import fix_width, to_bin
 
 type DirEncoder = Callable
 
-directive_map: dict[str, DirEncoder] = {}
+label_map = {}
+directive_map = {
+    ".byte": lambda x: format(int(x) & 0xFF, '08b')
+}
 
 def new_d(name: str):
     def _new(f: DirEncoder):
