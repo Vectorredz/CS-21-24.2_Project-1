@@ -17,6 +17,14 @@ def to_strbin(num: str):
     """Convert to binary string for easy conversion"""
     return f"0b{num}"
 
+def to_hex(value):
+    """Convert to hex string for easy conversion"""
+    return f"0x{int(to_strbin(value), 2):02x}"
+
+def hex_to_bin(value):
+    """Convert to hex string to binary literal for easy conversion"""
+    return to_bin(int(value), 8)
+
 def is_label(line):
     """Check if line is a label definition"""
     return line.endswith(':')
@@ -24,3 +32,4 @@ def is_label(line):
 def get_label_name(line):
     """Extract label name from label definition"""
     return line[:-1].strip()
+

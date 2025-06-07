@@ -362,27 +362,17 @@ class EmulatorInstructions:
 
     # instructions 77  -> 77. b <imm>
     def _type14(self):
-        b = int(self.cpu.instr.bin[4:8], 2)
-        a = int(self.cpu.instr.bin[8:], 2)    
-        self.cpu.IMM = (b << 8) | (a)
-
-        upperPC = self.cpu.PC & emu_u.HEX_16U4
-        self.cpu.PC = upperPC | self.cpu.IMM
-
-        self._PCNext(self.cpu.instr.is_branch)
-
+        lowerPC = self.cpu.PC & emu_u.HEX_16L4
+        self.cpu.IMM = int(asm_u.to_strbin(self.cpu.instr.bin[4:]), 2)
+        self.cpu.PC = self.cpu.IMM << 4 | lowerPC
+        
         return 
 
     # instructions 78 -> 78. call <imm> 
-    def _type15(self):
-        b = int(self.cpu.instr.bin[4:8], 2)
-        a = int(self.cpu.instr.bin[8:], 2)    
-        self.cpu.IMM = (b << 8) | (a)
-
+    def _type15(self): 
         self.cpu.TEMP = self.cpu.PC + 2
-        upperPC = self.cpu.PC & emu_u.HEX_16U4
-        self.cpu.PC = upperPC | self.cpu.IMM
-
-        self._PCNext(self.cpu.instr.is_branch)
+        lowerPC = self.cpu.PC & emu_u.HEX_16L4
+        self.cpu.IMM = int(asm_u.to_strbin(self.cpu.instr.bin[4:]), 2)
+        self.cpu.PC = self.cpu.IMM << 4 | lowerPC
 
         return 

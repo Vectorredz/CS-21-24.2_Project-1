@@ -9,7 +9,8 @@ import pyxel
 import subprocess
 
 BASE_DIR = Path(__file__).resolve().parent
-ASM_PATH = BASE_DIR / "assembler" / "asm_assembler.py"
+ASM_PATH = BASE_DIR / "Arch242_output_file.asm"
+
 
 """
 TODO:
@@ -284,18 +285,20 @@ class Arch242Emulator: # CPU
     def load_instructions(self) -> None:
         # Run the assembler first 
         
-        subprocess.run(["python", ASM_PATH], check=True)
-
-        with open(Path(emu_u.PATH), "r") as f:
+        with open(Path(ASM_PATH), "r") as f:
             assembled = f.readlines()
 
         for line in assembled:
             if (line[:5] == ".byte"):
                 self.DataMem.Data[self.DataMem.addr] = line.strip()
                 self.DataMem.addr += 1
-            else: 
+            elif (emu_u.is_binary_string(line)): 
                 self.InstMem.mem[self.InstMem.addr] = line.strip()
                 self.InstMem.addr += 1
+            elif not (emu_u.is_binary_string(line)):
+                self.InstMem.mem[self.InstMem.addr] = asm_u.hex_to_bin(line).strip()
+                self.InstMem.addr += 1
+        print(self.InstMem.mem)
         return
         
     def fetch(self) -> str:
@@ -364,7 +367,7 @@ class Arch242Emulator: # CPU
 
 def main():
     cpu = Arch242Emulator()
-    Pyxel(cpu)
+    # Pyxel(cpu)
 
 if __name__ == "__main__":
     main()

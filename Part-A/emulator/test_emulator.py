@@ -982,39 +982,40 @@ class TestType13Instructions:
         assert cpu.PC == expected_pc
 
 class TestType14Instructions:
-    """Test suite for Type 14 instructions (jump)"""
+    """Test suite for Type 14 instructions (branch on b)"""
     
-    def test_jump(self, cpu: Arch242Emulator):
-        """Test jump instruction (77)"""
-        # Instruction format: 1101 b a (16-bit)
-        cpu.InstMem.mem[0] = "11011010"  # First byte
-        cpu.InstMem.mem[1] = "01010000"  # Second byte (b=6, a=5)
-        curr = cpu.PC
-        cpu.instr = cpu.fetch()
-        cpu.decode()
-        cpu.execute()
-        
-        # Should jump to (b << 8) | a
-        expected_pc = (curr << 8) | cpu.IMM 
-        assert cpu.PC == expected_pc
+    def test_b(self, cpu: Arch242Emulator):
+        # Instruction format: 1100 1 b a (16-bit)
+        cpu.InstMem.mem[0] = "11101010"  # First byte
+        cpu.InstMem.mem[1] = "01010000"  # Second byte (b=2, a=5)
+        imm = int(asm_u.to_strbin(cpu.InstMem.mem[0][4:] + cpu.InstMem.mem[1]),2)
 
-class TestType15Instructions:
-    """Test suite for Type 15 instructions (call)"""
-    
-    def test_call(self, cpu: Arch242Emulator):
-        """Test call instruction (78)"""
-        # Instruction format: 1110 b a (16-bit)
-        cpu.InstMem.mem[0] = "11111010"  # First byte
-        cpu.InstMem.mem[1] = "01010000"  # Second byte (b=6, a=5)
-        initial_pc = cpu.PC
-        
+        assert cpu.PC == 0
         cpu.instr = cpu.fetch()
         cpu.decode()
+        assert cpu.PC == 1
+        lowerPC = cpu.PC & emu_u.HEX_16L4
+        expected_cpu = imm << 4 | lowerPC
         cpu.execute()
+        assert cpu.PC == expected_cpu
+        assert cpu.instr.bin == "1110101001010000"
         
-        # Should store return address in TEMP
-        assert cpu.TEMP == initial_pc + 2
-        
-        # Should jump to (b << 8) | a
-        expected_pc = (0b0110 << 8) | 0b0101
-        assert cpu.PC == expected_pc
+class TestType14Instructions:
+    """Test suite for Type 14 instructions (branch on b)"""
+    
+    def test_b(self, cpu: Arch242Emulator):
+        # Instruction format: 1100 1 b a (16-bit)
+        cpu.InstMem.mem[0] = "11111010"  # First byte
+        cpu.InstMem.mem[1] = "01010000"  # Second byte (b=2, a=5)
+        imm = int(asm_u.to_strbin(cpu.InstMem.mem[0][4:] + cpu.InstMem.mem[1]),2)
+
+        assert cpu.PC == 0
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        assert cpu.PC == 1
+        lowerPC = cpu.PC & emu_u.HEX_16L4
+        expected_cpu = imm << 4 | lowerPC
+        cpu.execute()
+        assert 1 + 2 == cpu.TEMP
+        assert cpu.PC == expected_cpu
+        assert cpu.instr.bin == "1111101001010000"
