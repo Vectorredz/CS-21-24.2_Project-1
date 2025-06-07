@@ -1,5 +1,5 @@
 from typing import Callable
-from asm_utils import fix_width, to_bin
+from assembler.asm_utils import fix_width, to_bin
 
 type DirEncoder = Callable
 

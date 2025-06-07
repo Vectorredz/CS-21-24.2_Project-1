@@ -25,7 +25,9 @@ class EmulatorInstructions:
         return bool(mask & result)
     
     def _readL4(self, addr: int) -> int:
-        return self._truncate(self.cpu.DataMem.mem[addr])
+        print(f"Reading memory at address: {addr}")
+        # if 
+        return int(self.cpu.DataMem.mem[addr]) & 0xF
 
     def _writeL4(self, addr: int, val: int) -> None:
         self.cpu.DataMem.mem[addr] = self._truncate(val) & 0xF
@@ -200,7 +202,7 @@ class EmulatorInstructions:
                 self.cpu.RegFile['CF'] = 1
             
         elif self.cpu.instr.dec == 0b0011011100111110: # 40. shutdown
-            exit(self)
+            exit(0)
 
         elif self.cpu.instr.dec == 0b00111110: # 47. nop
             pass
@@ -243,7 +245,7 @@ class EmulatorInstructions:
         rb_imm = int(asm_u.to_strbin(self.cpu.instr.bin[12:]), 2) << 4
         ra_imm = int(asm_u.to_strbin(self.cpu.instr.bin[4:8]) , 2)
         self.cpu.IMM = rb_imm | ra_imm
-
+        self.cpu.RBRA = self.cpu.IMM
         self.cpu.RegFile['RA'] = ra_imm
         self.cpu.RegFile['RB'] = rb_imm
 
@@ -268,7 +270,7 @@ class EmulatorInstructions:
     def _type8(self):
         self.cpu.IMM = self.cpu.instr.dec & emu_u.HEX_8L4 # 67. acc <self.cpu.IMM>	
         self.cpu.RegFile['ACC'] = self.cpu.IMM
-
+        print("nigger")
         self.cpu.PC += 1
 
         return 
@@ -316,10 +318,10 @@ class EmulatorInstructions:
         self.cpu.IMM = (b << 8) | (a)
         tag = self.cpu.instr.bin[4]
 
-        if (tag == '0' and self.cpu.RegFile['ACC'] != 0): # 71. beqz <self.cpu.IMM>
+        if (tag == '0' and self.cpu.RegFile['ACC'] == 0): # 71. beqz <self.cpu.IMM>
             upperPC = self.cpu.PC & emu_u.HEX_16U5
             self.cpu.PC = upperPC | self.cpu.IMM
-        elif (tag == '1' and self.cpu.RegFile['ACC'] == 0): # 72. bnez <self.cpu.IMM>
+        elif (tag == '1' and self.cpu.RegFile['ACC'] != 0): # 72. bnez <self.cpu.IMM>
             upperPC = self.cpu.PC & emu_u.HEX_16U5
             self.cpu.PC = upperPC | self.cpu.IMM
 
@@ -334,10 +336,10 @@ class EmulatorInstructions:
         self.cpu.IMM = (b << 8) | (a)
         tag = self.cpu.instr.bin[4]
 
-        if (self.cpu.RegFile['CF'] != 0 and tag == '0'): # 73. beqz-cf <self.cpu.IMM>
+        if (self.cpu.RegFile['CF'] == 0 and tag == '0'): # 73. beqz-cf <self.cpu.IMM>
             upperPC = self.cpu.PC & emu_u.HEX_16U5
             self.cpu.PC = upperPC | self.cpu.IMM
-        elif (self.cpu.RegFile['CF'] == 0 and tag == '1'): # 74. bnez-cf <self.cpu.IMM>
+        elif (self.cpu.RegFile['CF'] != 0 and tag == '1'): # 74. bnez-cf <self.cpu.IMM>
             upperPC = self.cpu.PC & emu_u.HEX_16U5
             self.cpu.PC = upperPC | self.cpu.IMM
         
@@ -362,17 +364,21 @@ class EmulatorInstructions:
 
     # instructions 77  -> 77. b <imm>
     def _type14(self):
-        lowerPC = self.cpu.PC & emu_u.HEX_16L4
-        self.cpu.IMM = int(asm_u.to_strbin(self.cpu.instr.bin[4:]), 2)
-        self.cpu.PC = self.cpu.IMM << 4 | lowerPC
-        
-        return 
+        upperPC = self.cpu.PC & emu_u.HEX_16U4               # Upper 4 bits of PC
+        self.cpu.IMM = int(asm_u.to_strbin(self.cpu.instr.bin[4:]), 2)  # 12-bit immediate from instr
+        self.cpu.PC = upperPC | self.cpu.IMM               # Merge upper 4 bits of PC with 12-bit imm
+
 
     # instructions 78 -> 78. call <imm> 
     def _type15(self): 
         self.cpu.TEMP = self.cpu.PC + 2
-        lowerPC = self.cpu.PC & emu_u.HEX_16L4
-        self.cpu.IMM = int(asm_u.to_strbin(self.cpu.instr.bin[4:]), 2)
-        self.cpu.PC = self.cpu.IMM << 4 | lowerPC
+            # Retain upper 4 bits of PC
+        upper_pc = self.cpu.PC & 0xF000
+
+        # Extract 12-bit immediate
+        imm_12bit = int(self.cpu.instr.bin[4:], 2)  # bits 4–15
+
+        # Set new PC with upper 4 bits from PC, lower 12 bits from immediate
+        self.cpu.PC = upper_pc | imm_12bit
 
         return 

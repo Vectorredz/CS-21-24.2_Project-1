@@ -30,6 +30,52 @@ instr_type: dict[str, str] = {
     "1111": "Type15"
 }
 instr_16_bit: list[str] = ["Type5", "Type6", "Type7", "Type9",  "Type10", "Type11", "Type12", "Type13", "Type14", "Type15"]
+instr_imm_arg = [
+    "add", "sub", "and", "xor", "or",
+    "r4", "rarb", "rcrd", "acc",
+    "b-bit", "bnz-a", "bnz-b", "beqz", "bnez",
+    "beqz-cf", "bnez-cf", "bnz-d", "b", "call"
+]
+instr_reg_arg = [
+    "inc*-reg",     # Increment REG[RRR]
+    "dec*-reg",     # Decrement REG[RRR]
+    "to-reg",       # ACC → REG[RRR]
+    "from-reg"      # REG[RRR] → ACC
+]
+
+instr_no_arg: list[str] = [
+    "rot-r",       # 00000000
+    "rot-l",       # 00000001
+    "rot-rc",      # 00000010
+    "rot-lc",      # 00000011
+    "from-mba",    # 00000100
+    "to-mba",      # 00000101
+    "from-mdc",    # 00000110
+    "to-mdc",      # 00000111
+    "addc-mba",    # 00001000
+    "add-mba",     # 00001001
+    "subc-mba",    # 00001010
+    "sub-mba",     # 00001011
+    "inc*-mba",    # 00001100
+    "dec*-mba",    # 00001101
+    "inc*-mdc",    # 00001110
+    "dec*-mdc",    # 00001111
+    "and-ba",      # 00011010
+    "xor-ba",      # 00011011
+    "or-ba",       # 00011100
+    "and*-mba",    # 00011101
+    "xor*-mba",    # 00011110
+    "or*-mba",     # 00011111
+    "clr-cf",      # 00101010
+    "set-cf",      # 00101011
+    "ret",         # 00101110
+    "from-ioa",    # 00110010
+    "inc",         # 00110001
+    "bcd",         # 00110110
+    "shutdown",    # 00110111 00111110 (still no arg; it's a 2-byte fixed opcode)
+    "nop",         # 00111110
+    "dec",         # 00111111
+]
 
 # - Registers
 
@@ -242,7 +288,7 @@ def localizer(binary,imm):
 for imm in immediates_4:
     binary = f"0111{imm}"
     localizer(binary, imm)
-    
+
 # ======================================================
 
 
@@ -293,10 +339,3 @@ for i in range(2):
             binary = f"{1111}{imm}"
             localizer(binary, i, imm)
 
-# def print_instruction_map():
-#     for binary, func in instruction_map.items():
-#         try:
-#             print(f"{binary}: {func()}")
-#         except Exception as e:
-#             print(f"{binary}: <error calling function> ({e})")
-# print_instruction_map()
