@@ -1,4 +1,4 @@
-b ------------ BRANCH_TO: GAME_LOOP
+b GAME_LOOP ------------ BRANCH_TO: GAME_LOOP
 --!
 from-reg 0 -------------------- function NEXT_CELL(direction RE, CELL pointer RB:RA)
 rcrd 242 -- temporarily store CELL pointer
@@ -13,15 +13,39 @@ to-reg 2
 from-reg 1
 to-reg 3
 from-reg 4 -- get direction (RE)
-b-bit 0 ------------ BRANCH_TO: NEXT_CELL_up
+b-bit 0 NEXT_CELL_up ------------ BRANCH_TO: NEXT_CELL_up
 --!
-b-bit 1 ------------ BRANCH_TO: NEXT_CELL_down
+b-bit 1 NEXT_CELL_down ------------ BRANCH_TO: NEXT_CELL_down
 --!
-b-bit 2 ------------ BRANCH_TO: NEXT_CELL_left
+b-bit 2 NEXT_CELL_left ------------ BRANCH_TO: NEXT_CELL_left
 --!
-b-bit 3 ------------ BRANCH_TO: NEXT_CELL_right
+b-bit 3 NEXT_CELL_right ------------ BRANCH_TO: NEXT_CELL_right
 --!
-acc 1 ------------ BRANCH: NEXT_CELL_up
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+NEXT_CELL_up: acc 1 NEXT_CELL_up ------------ BRANCH: NEXT_CELL_up
 rarb 242 -- move pointer to ID upper nibble first
 --!
 clr-cf
@@ -41,10 +65,39 @@ clr-cf
 sub-mba -- move up 1 row (-5 IDs)
 to-mdc -- store to lower nibble
 r4 0
-bnez-cf ------------ BRANCH_TO: NEXT_CELL_up_dec
+bnez-cf NEXT_CELL_up_dec ------------ BRANCH_TO: NEXT_CELL_up_dec
 --!
 ret
-rcrd 242 ------------ BRANCH: NEXT_CELL_up_dec
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+NEXT_CELL_up_dec: rcrd 242 NEXT_CELL_up_dec ------------ BRANCH: NEXT_CELL_up_dec
 --! -- copy upper nibble address to RB:RA
 from-mdc
 to-reg 0
@@ -54,7 +107,11 @@ from-mdc
 to-reg 1
 dec*-mba -- decrease upper nibble if CF underflow bit is 1
 ret
-acc 1 ------------ BRANCH: NEXT_CELL_down
+nop
+nop
+nop
+nop
+NEXT_CELL_down: acc 1 NEXT_CELL_down ------------ BRANCH: NEXT_CELL_down
 rarb 242 -- move pointer to ID upper nibble first
 --!
 clr-cf
@@ -85,7 +142,10 @@ addc-mba -- add any possible overflows
 to-mba
 r4 0
 ret
-from-reg 2 ------------ BRANCH: NEXT_CELL_left
+nop
+nop
+nop
+NEXT_CELL_left: from-reg 2 NEXT_CELL_left ------------ BRANCH: NEXT_CELL_left
 rarb 245 -- store initial pointer for possible use later
 --!
 to-mba
@@ -109,11 +169,39 @@ to-reg 3 -- copy to RD
 from-mdc -- get MASK
 rot-r -- move left 1 col
 to-mdc
-b-bit 3 ------------ BRANCH_TO: NEXT_CELL_left_flow
+b-bit 3 NEXT_CELL_left_flow ------------ BRANCH_TO: NEXT_CELL_left_flow
 --!
 r4 0
 ret
-rarb 245 ------------ BRANCH: NEXT_CELL_left_flow
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+NEXT_CELL_left_flow: rarb 245 NEXT_CELL_left_flow ------------ BRANCH: NEXT_CELL_left_flow
 --!
 from-mba -- set pointer and RD:RC to initial
 rarb 242
@@ -147,10 +235,39 @@ clr-cf
 sub-mba -- decrease ID
 to-mdc -- store to lower nibble
 r4 1
-bnez-cf ------------ BRANCH_TO: NEXT_CELL_left_flow_dec
+bnez-cf NEXT_CELL_left_flow_dec ------------ BRANCH_TO: NEXT_CELL_left_flow_dec
 --!
 ret
-rcrd 242 ------------ BRANCH: NEXT_CELL_left_flow_dec
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+NEXT_CELL_left_flow_dec: rcrd 242 NEXT_CELL_left_flow_dec ------------ BRANCH: NEXT_CELL_left_flow_dec
 --! -- copy upper nibble address to RB:RA
 from-mdc
 to-reg 0
@@ -160,7 +277,37 @@ from-mdc
 to-reg 1
 dec*-mba -- decrease upper nibble if CF underflow bit is 1
 ret
-from-reg 2 ------------ BRANCH: NEXT_CELL_right
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+NEXT_CELL_right: from-reg 2 NEXT_CELL_right ------------ BRANCH: NEXT_CELL_right
 rarb 245 -- store initial pointer for possible use later
 --!
 to-mba
@@ -184,11 +331,39 @@ to-reg 3 -- copy to RD
 from-mdc -- get MASK
 rot-l -- move right 1 col
 to-mdc
-b-bit 0 ------------ BRANCH_TO: NEXT_CELL_right_flow
+b-bit 0 NEXT_CELL_right_flow ------------ BRANCH_TO: NEXT_CELL_right_flow
 --!
 r4 0
 ret
-rarb 245 ------------ BRANCH: NEXT_CELL_right_flow
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+NEXT_CELL_right_flow: rarb 245 NEXT_CELL_right_flow ------------ BRANCH: NEXT_CELL_right_flow
 --!
 from-mba -- set pointer and RD:RC to initial
 rarb 242
@@ -236,84 +411,98 @@ ret -------------------- NEXT_CELL end
 from-ioa ---------------------------------------- GAME_LOOP
 rarb 253 -- store new direction to 253 (get current val first if input is 0b0000)
 --!
-beqz ------------ BRANCH_TO: GAME_LOOP_input
+beqz GAME_LOOP_input ------------ BRANCH_TO: GAME_LOOP_input
 --!
 from-mba
-to-mba ------------ BRANCH: GAME_LOOP_input
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+GAME_LOOP_input: to-mba GAME_LOOP_input ------------ BRANCH: GAME_LOOP_input
 to-reg 4 -- setup call args
 rarb 5
 --!
 call 0 ------------ NEXT_CELL(input, &snake-head)
 from-reg 4
-beqz ------------ BRANCH_TO: GAME_LOOP_oob_row
+beqz GAME_LOOP_oob_row ------------ BRANCH_TO: GAME_LOOP_oob_row
 --!
 rarb 6 -- compare column borders if oob
 --!
-acc 0b1100 -- 192, 197, 202, 207
+acc 1100 -- 192, 197, 202, 207
 xor-ba
-bnez ------------ BRANCH_TO: GAME_LOOP_oob_col_1101
+bnez GAME_LOOP_oob_col_1101 ------------ BRANCH_TO: GAME_LOOP_oob_col_1101
 --!
 rarb 5
 --!
 acc 0b0000 -- 1100 + (lower nibble)
 xor-ba
-beqz ------------ BRANCH_TO: GAME_DEATH
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
 acc 0b0101 -- 1100 + (lower nibble)
 xor-ba
-beqz ------------ BRANCH_TO: GAME_DEATH
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
 acc 0b1010 -- 1100 + (lower nibble)
 xor-ba
-beqz ------------ BRANCH_TO: GAME_DEATH
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
 acc 0b1111 -- 1100 + (lower nibble)
 xor-ba
-beqz ------------ BRANCH_TO: GAME_DEATH
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-b ------------ BRANCH_TO: GAME_LOOP_oob_row
+b GAME_LOOP_oob_row ------------ BRANCH_TO: GAME_LOOP_oob_row
 --!
-acc 0b1101 -- 212, 217, 222 ------------ BRANCH: GAME_LOOP_oob_col_1101
+GAME_LOOP_oob_col_1101: acc 1101 GAME_LOOP_oob_col_1101 -- 212, 217, 222 ------------ BRANCH: GAME_LOOP_oob_col_1101
 xor-ba
-bnez ------------ BRANCH_TO: GAME_LOOP_oob_col_1110
+bnez GAME_LOOP_oob_col_1110 ------------ BRANCH_TO: GAME_LOOP_oob_col_1110
 --!
 rarb 5
 --!
 acc 0b0100 -- 1101 + (lower nibble)
 xor-ba
-beqz ------------ BRANCH_TO: GAME_DEATH
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
 acc 0b1001 -- 1101 + (lower nibble)
 xor-ba
-beqz ------------ BRANCH_TO: GAME_DEATH
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
 acc 0b1110 -- 1101 + (lower nibble)
 xor-ba
-beqz ------------ BRANCH_TO: GAME_DEATH
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-b ------------ BRANCH_TO: GAME_LOOP_oob_row
+b GAME_LOOP_oob_row ------------ BRANCH_TO: GAME_LOOP_oob_row
 --!
-acc 0b1110 -- 227. 232, 237 ------------ BRANCH: GAME_LOOP_oob_col_1110
+GAME_LOOP_oob_col_1110: acc 1110 GAME_LOOP_oob_col_1110 -- 227. 232, 237 ------------ BRANCH: GAME_LOOP_oob_col_1110
 xor-ba
-bnez ------------ BRANCH_TO: GAME_LOOP_oob_row
+bnez GAME_LOOP_oob_row ------------ BRANCH_TO: GAME_LOOP_oob_row
 --!
 rarb 5
 --!
 acc 0b0011 -- 1110 + (lower nibble)
 xor-ba
-beqz ------------ BRANCH_TO: GAME_DEATH
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
 acc 0b1000 -- 1110 + (lower nibble)
 xor-ba
-beqz ------------ BRANCH_TO: GAME_DEATH
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
 acc 0b1101 -- 1110 + (lower nibble)
 xor-ba
-beqz ------------ BRANCH_TO: GAME_DEATH
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-b ------------ BRANCH_TO: GAME_LOOP_oob_row
+b GAME_LOOP_oob_row ------------ BRANCH_TO: GAME_LOOP_oob_row
 --!
-acc 0b1100 ------------ BRANCH: GAME_LOOP_oob_row
+GAME_LOOP_oob_row: acc 0b1100 GAME_LOOP_oob_row ------------ BRANCH: GAME_LOOP_oob_row
 rarb 243 -- check if lower than 192: subtract 0b1100 and check if underflow (upper nibble of 192)
 --!
 to-mba
@@ -324,13 +513,13 @@ rarb 243
 --!
 clr-cf
 sub-mba
-bnez-cf ------------ BRANCH_TO: GAME_DEATH
+bnez-cf GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-acc 0b1111 -- check if upper nibble is 1111
+acc 1111 -- check if upper nibble is 1111
 rarb 6
 --!
 xor-ba
-bnez ------------ BRANCH_TO: GAME_LOOP_food
+bnez GAME_LOOP_food ------------ BRANCH_TO: GAME_LOOP_food
 --!
 rarb 5 -- check if lower nibble > 0b0001 (higher than 241)
 --!
@@ -341,9 +530,9 @@ to-mba
 acc 0b0001
 clr-cf
 sub-mba
-bnez-cf ------------ BRANCH_TO: GAME_DEATH
+bnez-cf GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-acc 0 ------------ BRANCH: GAME_LOOP_food
+GAME_LOOP_food: acc 0 GAME_LOOP_food ------------ BRANCH: GAME_LOOP_food
 rarb 244
 --!
 to-mba
@@ -375,7 +564,7 @@ rarb 244
 -!
 or*-mba
 from-mba -- only copies lower nibble of this address, no need to worry about upper 0b1111 due to xor + or
-beqz ------------ BRANCH_TO: GAME_LOOP_food_ate
+beqz GAME_LOOP_food_ate ------------ BRANCH_TO: GAME_LOOP_food_ate
 --! -- food was missed
 rcrd 5
 --! -- check if snake-head LED is already 1
@@ -389,7 +578,7 @@ rcrd 7
 --!
 from-mdc
 and-ba
-bnez ------------ BRANCH_TO: GAME_DEATH
+bnez GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
 acc 0 -- set food-ate to 0
 rarb 255
@@ -437,20 +626,20 @@ sub-mba
 to-mba
 from-mdc -- copy dir to r4
 to-reg 4
-bnez-cf ------------ BRANCH_TO: GAME_LOOP_food_miss_queue-tail_dec
+bnez-cf GAME_LOOP_food_miss_queue-tail_dec ------------ BRANCH_TO: GAME_LOOP_food_miss_queue-tail_dec
 --!
-b ------------ BRANCH_TO: GAME_LOOP_food_miss_shift
+b GAME_LOOP_food_miss_shift ------------ BRANCH_TO: GAME_LOOP_food_miss_shift
 --!
-rarb 243 ------------ BRANCH: GAME_LOOP_food_miss_queue-tail_dec
+GAME_LOOP_food_miss_queue-tail_dec: rarb 243 GAME_LOOP_food_miss_queue-tail_dec ------------ BRANCH: GAME_LOOP_food_miss_queue-tail_dec
 --!
 dec*-mba
-b ------------ BRANCH_TO: GAME_LOOP_food_miss_shift
+b GAME_LOOP_food_miss_shift ------------ BRANCH_TO: GAME_LOOP_food_miss_shift
 --!
-acc 0b0000 ------------ BRANCH: GAME_LOOP_food_miss_shift
+GAME_LOOP_food_miss_shift: acc 0b0000 GAME_LOOP_food_miss_shift ------------ BRANCH: GAME_LOOP_food_miss_shift
 rarb 243 -- if upper nibble is not 0b0000 then just skip lower nibble check
 --!
 xor-ba
-bnez ------------ BRANCH_TO: GAME_LOOP_food_miss_shift_cont
+bnez GAME_LOOP_food_miss_shift_cont ------------ BRANCH_TO: GAME_LOOP_food_miss_shift_cont
 --!
 acc 0b1101 -- set sub-mba arg to 0b1101
 rarb 244
@@ -463,9 +652,9 @@ rarb 244
 --!
 clr-cf
 sub-mba -- check if less than 13
-bnez-cf ------------ BRANCH_TO: GAME_LOOP_enqueue
+bnez-cf GAME_LOOP_enqueue ------------ BRANCH_TO: GAME_LOOP_enqueue
 --!
-rarb 242 ------------ BRANCH: GAME_LOOP_food_miss_shift_cont
+GAME_LOOP_food_miss_shift_cont: rarb 242 GAME_LOOP_food_miss_shift_cont ------------ BRANCH: GAME_LOOP_food_miss_shift_cont
 --! -- copy current queue pointer to RD:RC
 from-mba -- assume that r4 = dir from pointer + 1
 to-reg 2
@@ -491,16 +680,16 @@ rarb 244 -- subtract 1
 clr-cf
 sub-mba
 to-mba
-bnez-cf ------------ BRANCH_TO: GAME_LOOP_food_miss_shift_dec
+bnez-cf GAME_LOOP_food_miss_shift_dec ------------ BRANCH_TO: GAME_LOOP_food_miss_shift_dec
 --!
-b ------------ BRANCH_TO: GAME_LOOP_food_miss_shift
+b GAME_LOOP_food_miss_shift ------------ BRANCH_TO: GAME_LOOP_food_miss_shift
 --!
-rarb 243 ------------ BRANCH: GAME_LOOP_food_miss_shift_dec
+GAME_LOOP_food_miss_shift_dec: rarb 243 GAME_LOOP_food_miss_shift_dec ------------ BRANCH: GAME_LOOP_food_miss_shift_dec
 --!
 dec*-mba
-b ------------ BRANCH_TO: GAME_LOOP_food_miss_shift
+b GAME_LOOP_food_miss_shift ------------ BRANCH_TO: GAME_LOOP_food_miss_shift
 --!
-acc 1 ------------ BRANCH: GAME_LOOP_food_ate
+GAME_LOOP_food_ate: acc 1 GAME_LOOP_food_ate ------------ BRANCH: GAME_LOOP_food_ate
 rarb 255 -- set food-ate to 1
 --!
 to-mba
@@ -527,9 +716,9 @@ to-mba
 rarb 254 -- score += 1
 --!
 inc*-mba
-b ------------ BRANCH_TO: GAME_LOOP_enqueue
+b GAME_LOOP_enqueue ------------ BRANCH_TO: GAME_LOOP_enqueue
 --!
-rcrd 11 ------------ BRANCH: GAME_LOOP_enqueue
+GAME_LOOP_enqueue: rcrd 11 GAME_LOOP_enqueue ------------ BRANCH: GAME_LOOP_enqueue
 --! -- get queue-tail address
 from-mdc
 to-reg 0
@@ -556,12 +745,12 @@ and*-mba -- update snake-head LED
 rarb 255 -- finally, check food-ate and spawn new food if its 1
 --!
 from-mba
-beqz ------------ BRANCH_TO: GAME_LOOP
+beqz GAME_LOOP ------------ BRANCH_TO: GAME_LOOP
 --!
-b ------------ BRANCH_TO: GAME_LOOP_food_spawn
+b GAME_LOOP_food_spawn ------------ BRANCH_TO: GAME_LOOP_food_spawn
 --!
-shutdown ------------ BRANCH: GAME_DEATH
-rarb 253 ------------ BRANCH: GAME_LOOP_food_spawn
+shutdown GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
+GAME_LOOP_food_spawn: rarb 253 GAME_LOOP_food_spawn ------------ BRANCH: GAME_LOOP_food_spawn
 --! -- spawn new food (final operation yay!!! >_<)
 from-mba -- get new dir again
 rarb 250 -- add to RNG
@@ -594,11 +783,11 @@ and*-mba -- set upper nibble upper two bits to 1 (since 192-241 are all 11XX)
 .byte 0x03  ---- length (lower nibble)
 .byte 0x00  ---- length (upper nibble)
 .byte 0x00  ---- food address ID (lower nibble)
-.byte 0xda  -- food address ID (upper nibble)
-.byte 0x01  -- food address MASK
+.byte 0x00  -- food address ID (upper nibble)
+.byte 0x00  -- food address MASK
 .byte 0x00  ---- snake-tail address ID (lower nibble) = 192
 .byte 0x0c  -- snake-tail address ID (upper nibble) = 192
-.byte 0x01  -- snake-tail address MASK = 0b0001
+.byte 0x00  -- snake-tail address MASK = 0b0000
 .byte 0x00  ---- snake-head address ID (lower nibble) = 192
 .byte 0x0c  -- snake-head address ID (upper nibble) = 192
 .byte 0x04  -- snake-head address MASK = 0b0100
