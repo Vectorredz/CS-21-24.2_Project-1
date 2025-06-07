@@ -2,14 +2,18 @@ import sys
 import os
 import pytest
 from pathlib import Path
+
+# Add *this* (emulator/) directory to sys.path
+sys.path.append(os.path.dirname(__file__))
+
+# Add parent directory to path (optional, if importing from parent)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import emu_utils as emu_u
-
-# Add parent directory to path
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(parent_dir)
-
+from assembler import asm_utils as asm_u
 from Arch242_emulator import Instructions, Arch242Emulator, DataMemory, InstructionMemory
 from emu_instructions import EmulatorInstructions
+
 
 @pytest.fixture
 def cpu(): return Arch242Emulator()
@@ -632,86 +636,90 @@ class TestType5Instructions:
     def test_add_imm(self, cpu: Arch242Emulator):
         """Test ADD with immediate (49)"""
         # Binary: 0100 0001 0000 0101 (add imm=5)
-        cpu.InstMem.mem[0] = "01000001" 
+        cpu.InstMem.mem[0] = "01000000" 
         cpu.InstMem.mem[1] = "00000001"
 
         cpu.RegFile['ACC'] = 10
         
         cpu.instr = cpu.fetch()
-        assert cpu.instr == "01000001" 
+        assert cpu.instr == "01000000" 
         cpu.decode()
         # assert cpu.RegFile['ACC'] == 10
-        assert cpu.instr.bin == "0100000100000001" 
+        assert cpu.instr.bin == "0100000000000001" 
         cpu.execute()
         assert cpu.IMM == 1
         
-        
-        assert cpu.RegFile['ACC'] == 15  # 10 + 5
-        # assert cpu.PC == 2  # 16-bit instruction
+        assert cpu.RegFile['ACC'] == 11  # 10 + 5
+        assert cpu.PC == 2  # 16-bit instruction
 
-    # def test_sub_imm(self, cpu: Arch242Emulator):
-    #     """Test SUB with immediate (50)"""
-    #     # Binary: 0100 0010 0000 1010 (sub imm=10)
-    #     cpu.InstMem.mem[0] = "0100001000001010"
-    #     cpu.RegFile['ACC'] = 20
+    def test_sub_imm(self, cpu: Arch242Emulator):
+        """Test SUB with immediate (50)"""
+        # Binary: 0100 0010 0000 1010 (sub imm=10)
+        cpu.InstMem.mem[0] = "01000001" 
+        cpu.InstMem.mem[1] =  "00001010"
+        cpu.RegFile['ACC'] = 15
         
-    #     cpu.instr = cpu.fetch()
-    #     cpu.decode()
-    #     cpu.execute()
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        cpu.execute()
         
-    #     assert cpu.RegFile['ACC'] == 10  # 20 - 10
-    #     assert cpu.PC == 2
+        assert cpu.RegFile['ACC'] == 5  # 20 - 10
+        assert cpu.PC == 2
 
-    # def test_and_imm(self, cpu: Arch242Emulator):
-    #     """Test AND with immediate (51)"""
-    #     # Binary: 0100 0011 0000 1100 (and imm=0b1100)
-    #     cpu.InstMem.mem[0] = "0100001100001100"
-    #     cpu.RegFile['ACC'] = 0b1010
+    def test_and_imm(self, cpu: Arch242Emulator):
+        """Test AND with immediate (51)"""
+        # Binary: 0100 0011 0000 1100 (and imm=0b1100)
+        cpu.InstMem.mem[0] = "01000010" 
+        cpu.InstMem.mem[1] = "00001100"
+        cpu.RegFile['ACC'] = 0b1010
         
-    #     cpu.instr = cpu.fetch()
-    #     cpu.decode()
-    #     cpu.execute()
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        cpu.execute()
         
-    #     assert cpu.RegFile['ACC'] == 0b1000  # 1010 AND 1100
-    #     assert cpu.PC == 2
+        assert cpu.RegFile['ACC'] == 0b1000  # 1010 AND 1100
+        assert cpu.PC == 2
 
-    # def test_xor_imm(self, cpu: Arch242Emulator):
-    #     """Test XOR with immediate (52)"""
-    #     # Binary: 0100 0100 0000 1111 (xor imm=0b1111)
-    #     cpu.InstMem.mem[0] = "0100010000001111"
-    #     cpu.RegFile['ACC'] = 0b1010
+    def test_xor_imm(self, cpu: Arch242Emulator):
+        """Test XOR with immediate (52)"""
+        # Binary: 0100 0100 0000 1111 (xor imm=0b1111)
+        cpu.InstMem.mem[0] = "01000011" 
+        cpu.InstMem.mem[1] = "00001111"
+        cpu.RegFile['ACC'] = 0b1010
         
-    #     cpu.instr = cpu.fetch()
-    #     cpu.decode()
-    #     cpu.execute()
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        cpu.execute()
         
-    #     assert cpu.RegFile['ACC'] == 0b0101  # 1010 XOR 1111
-    #     assert cpu.PC == 2
+        assert cpu.RegFile['ACC'] == 0b0101  # 1010 XOR 1111
+        assert cpu.PC == 2
 
-    # def test_or_imm(self, cpu: Arch242Emulator):
-    #     """Test OR with immediate (53)"""
-    #     # Binary: 0100 0101 0000 1100 (or imm=0b1100)
-    #     cpu.InstMem.mem[0] = "0100010100001100"
-    #     cpu.RegFile['ACC'] = 0b1010
+    def test_or_imm(self, cpu: Arch242Emulator):
+        """Test OR with immediate (53)"""
+        # Binary: 0100 0101 0000 1100 (or imm=0b1100)
+        cpu.InstMem.mem[0] = "01000100" 
+        cpu.InstMem.mem[1] = "00001100"
+        cpu.RegFile['ACC'] = 0b1010
         
-    #     cpu.instr = cpu.fetch()
-    #     cpu.decode()
-    #     cpu.execute()
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        cpu.execute()
         
-    #     assert cpu.RegFile['ACC'] == 0b1110  # 1010 OR 1100
-    #     assert cpu.PC == 2
+        assert cpu.RegFile['ACC'] == 0b1110  # 1010 OR 1100
+        assert cpu.PC == 2
 
-    # def test_r4_imm(self, cpu: Arch242Emulator):
-    #     """Test load immediate to RE (55)"""
-    #     # Binary: 0100 0111 0000 1111 (r4 imm=15)
-    #     cpu.InstMem.mem[0] = "0100011100001111"
+    def test_r4_imm(self, cpu: Arch242Emulator):
+        """Test load immediate to RE (55)"""
+        # Binary: 0100 0111 0000 1111 (r4 imm=15)
+        cpu.InstMem.mem[0] = "01000110" 
+        cpu.InstMem.mem[1] = "00001111"
         
-    #     cpu.instr = cpu.fetch()
-    #     cpu.decode()
-    #     cpu.execute()
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        cpu.execute()
         
-    #     assert cpu.RegFile['RE'] == 15
-    #     assert cpu.PC == 2
+        assert cpu.RegFile['RE'] == 15
+        assert cpu.PC == 2
 
     # def test_add_imm_overflow(self, cpu: Arch242Emulator):
     #     """Test ADD immediate with overflow"""
@@ -761,3 +769,253 @@ class TestType5Instructions:
     #     cpu.execute()
     #     assert cpu.RegFile['RE'] == 15
     #     assert cpu.PC == 4
+
+class TestType6Instructions:
+    """Test suite for Type 6 instructions (rarb <imm>)"""
+    
+    def test_rarb_imm(self, cpu: Arch242Emulator):
+        """Test loading immediate to RA/RB (65)"""
+        cpu.InstMem.mem[0] = "01011111"  # First byte
+        cpu.InstMem.mem[1] = "00000000"  # Second byte 
+        
+        cpu.instr = cpu.fetch()  # Should get both bytes
+        cpu.decode()
+        cpu.execute()
+        
+        assert cpu.RegFile['RA'] == 0b1111  # 15
+        assert cpu.RegFile['RB'] == 0b0000  # 2
+        assert cpu.PC == 2  # 16-bit instruction
+
+class TestType7Instructions:
+    """Test suite for Type 7 instructions (rcrd <imm>)"""
+    
+    def test_rcrd_imm(self, cpu: Arch242Emulator):
+        cpu.InstMem.mem[0] = "01101111"  # First byte
+        cpu.InstMem.mem[1] = "00001111"  # Second byte 
+        
+        cpu.instr = cpu.fetch()  # Should get both bytes
+        cpu.decode()
+        cpu.execute()
+        
+        assert cpu.RegFile['RC'] == 0b0000  # 15
+        assert cpu.RegFile['RD'] == 0b1111  # 2
+        assert cpu.PC == 2  # 16-bit instruction
+
+class TestType8Instructions:
+    """Test suite for Type 8 instructions (acc <imm>)"""
+    
+    def test_acc_imm(self, cpu: Arch242Emulator):
+        # Instruction format: 0111 imm (8-bit)
+        cpu.InstMem.mem[0] = "01110101"  # imm=5
+        
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        cpu.execute()
+        
+        assert cpu.RegFile['ACC'] == 0b0101  # 5
+        assert cpu.PC == 1
+
+class TestType9Instructions:
+    """Test suite for Type 9 instructions (b-bit)"""
+    
+    def test_b_bit_branch_taken(self, cpu: Arch242Emulator):
+        """Test jump taken when ACC bit k is 1"""
+        cpu.PC = 0x0020
+        cpu.InstMem.mem[0x20] = "10001000"  # 1000kkbb
+        cpu.InstMem.mem[0x21] = "00000101"  # a = 0b00000101
+        
+        cpu.RegFile["ACC"] = 0b0100  # Bit 2 = 1 (k = 2)
+
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        cpu.execute()
+        k = cpu.instr.bin[4:6]
+        b = cpu.instr.bin[6:8]
+        a = cpu.instr.bin[8:]
+
+        assert k == "10"
+        assert b == "00"
+        assert a == "00000101"
+        imm = (int(asm_u.to_strbin(b), 2) << 8) | int(asm_u.to_strbin(a), 2) # = 0x105
+        expected_pc = ((cpu.PC - 2) & 0xF800) | imm
+        assert cpu.PC == expected_pc, f"Expected PC = {hex(expected_pc)}, got {hex(cpu.PC)}"
+
+    def test_b_bit_branch_not_taken(self, cpu: Arch242Emulator):
+        """Test conditional jump is NOT taken when ACC bit K is 0"""
+
+        # Same instruction: k=2, b=1, a=0x05 → imm = 0x105
+        cpu.PC = 0x20
+        cpu.InstMem.mem[0x20] = "10001000"
+        cpu.InstMem.mem[0x21] = "10000101"
+
+        cpu.RegFile["ACC"] = 0b00000000  # Bit 2 is 0 → should NOT jump
+
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        cpu.execute()
+
+        # Should just move to next instruction (2-byte instr)
+        expected_pc = 0x0022
+        assert cpu.PC == expected_pc, f"Expected PC to be {hex(expected_pc)}, got {hex(cpu.PC)}"
+
+class TestType10Instructions:
+    """Test suite for Type 10 instructions (bnz)"""
+    
+    def test_bnz_a(self, cpu: Arch242Emulator):
+        """Test bnz-a instruction (69)"""
+        # Instruction format: 1001 0 b a (16-bit)
+        cpu.InstMem.mem[0] = "10100010"  # First byte
+        cpu.InstMem.mem[1] = "01010000"  # 
+        cpu.RegFile['RA'] = 1
+
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        cpu.execute()
+        
+        assert cpu.RegFile['RA'] == 1
+        assert cpu.IMM == 592
+        assert cpu.instr.bin[4] == '0'
+        # Should always take the branch
+        expected_pc = (cpu.PC & 0xF800) | (0b010 << 8) | cpu.IMM
+        assert cpu.PC == expected_pc
+
+    def test_bnz_a(self, cpu: Arch242Emulator):
+        """Test bnz-a instruction (69)"""
+        # Instruction format: 1001 0 b a (16-bit)
+        cpu.InstMem.mem[0] = "10101010"  # First byte
+        cpu.InstMem.mem[1] = "01010000"  # 
+        cpu.RegFile['RB'] = 1
+
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        cpu.execute()
+        
+        assert cpu.RegFile['RB'] == 1
+        assert cpu.IMM == 592
+        assert cpu.instr.bin[4] == '1'
+        # Should always take the branch
+        expected_pc = (cpu.PC & 0xF800) | (0b010 << 8) | cpu.IMM
+        assert cpu.PC == expected_pc
+
+class TestType11Instructions:
+    """Test suite for Type 11 instructions (beqz/bnez)"""
+    
+    def test_beqz(self, cpu: Arch242Emulator):
+        """Test beqz instruction (71)"""
+        # Instruction format: 1010 0 b a (16-bit)
+        cpu.InstMem.mem[0] = "10110010"  # First byte
+        cpu.InstMem.mem[1] = "01010000"  # Second byte (b=2, a=5)
+        cpu.RegFile['ACC'] = 1  # Non-zero
+        
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        cpu.execute()
+        assert cpu.IMM == 592
+        # Should branch since ACC != 0 and tag=0
+        expected_pc = (cpu.PC & 0xF800) | (0b010 << 8) | cpu.IMM
+        assert cpu.PC == expected_pc
+    
+    def test_bnez(self, cpu: Arch242Emulator):
+        """Test bnez instruction (72)"""
+        # Instruction format: 1010 1 b a (16-bit)
+        cpu.InstMem.mem[0] = "10111010"  # First byte
+        cpu.InstMem.mem[1] = "01010000"  # Second byte (b=2, a=5)
+        cpu.RegFile['ACC'] = 0  # Zero
+        
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        cpu.execute()
+        
+        # Should branch since ACC == 0 and tag=1
+        expected_pc = (cpu.PC & 0xF800) | (0b010 << 8) | cpu.IMM
+        assert cpu.PC == expected_pc
+
+class TestType12Instructions:
+    """Test suite for Type 12 instructions (beqz-cf/bnez-cf)"""
+    
+    def test_beqz_cf(self, cpu: Arch242Emulator):
+        """Test beqz-cf instruction (73)"""
+        # Instruction format: 1011 0 b a (16-bit)
+        cpu.InstMem.mem[0] = "11000010"  # First byte
+        cpu.InstMem.mem[1] = "01010000"  # Second byte (b=2, a=5)
+        cpu.RegFile['CF'] = 1  # Non-zero
+        
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        cpu.execute()
+        
+        # Should branch since CF != 0 and tag=0
+        expected_pc = (cpu.PC & 0xF800) | (0b010 << 8) | cpu.IMM
+        assert cpu.PC == expected_pc
+    
+    def test_bnez_cf(self, cpu: Arch242Emulator):
+        """Test bnez-cf instruction (74)"""
+        # Instruction format: 1011 1 b a (16-bit)
+        cpu.InstMem.mem[0] = "11001010"  # First byte
+        cpu.InstMem.mem[1] = "01010000"  # Second byte (b=2, a=5)
+        cpu.RegFile['CF'] = 0  # Zero
+        
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        cpu.execute()
+        
+        # Should branch since CF == 0 and tag=1
+        expected_pc = (cpu.PC & 0xF800) | (0b010 << 8) | cpu.IMM
+        assert cpu.PC == expected_pc
+
+class TestType13Instructions:
+    """Test suite for Type 13 instructions (branch on RD)"""
+    
+    def test_branch_rd(self, cpu: Arch242Emulator):
+        """Test branch on RD instruction (76)"""
+        # Instruction format: 1100 1 b a (16-bit)
+        cpu.InstMem.mem[0] = "11001010"  # First byte
+        cpu.InstMem.mem[1] = "01010000"  # Second byte (b=2, a=5)
+        cpu.RegFile['RD'] = 1  # Non-zero
+        
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        cpu.execute()
+        
+        # Should branch since RD != 0 and tag=1
+        expected_pc = (cpu.PC & 0xF800) | (0b010 << 8) | cpu.IMM
+        assert cpu.PC == expected_pc
+
+class TestType14Instructions:
+    """Test suite for Type 14 instructions (branch on b)"""
+    
+    def test_b(self, cpu: Arch242Emulator):
+        # Instruction format: 1100 1 b a (16-bit)
+        cpu.InstMem.mem[0] = "11101010"  # First byte
+        cpu.InstMem.mem[1] = "01010000"  # Second byte (b=2, a=5)
+        imm = int(asm_u.to_strbin(cpu.InstMem.mem[0][4:] + cpu.InstMem.mem[1]),2)
+
+        assert cpu.PC == 0
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        assert cpu.PC == 1
+        lowerPC = cpu.PC & emu_u.HEX_16L4
+        expected_cpu = imm << 4 | lowerPC
+        cpu.execute()
+        assert cpu.PC == expected_cpu
+        assert cpu.instr.bin == "1110101001010000"
+        
+class TestType14Instructions:
+    """Test suite for Type 14 instructions (branch on b)"""
+    
+    def test_b(self, cpu: Arch242Emulator):
+        # Instruction format: 1100 1 b a (16-bit)
+        cpu.InstMem.mem[0] = "11111010"  # First byte
+        cpu.InstMem.mem[1] = "01010000"  # Second byte (b=2, a=5)
+        imm = int(asm_u.to_strbin(cpu.InstMem.mem[0][4:] + cpu.InstMem.mem[1]),2)
+
+        assert cpu.PC == 0
+        cpu.instr = cpu.fetch()
+        cpu.decode()
+        assert cpu.PC == 1
+        lowerPC = cpu.PC & emu_u.HEX_16L4
+        expected_cpu = imm << 4 | lowerPC
+        cpu.execute()
+        assert 1 + 2 == cpu.TEMP
+        assert cpu.PC == expected_cpu
+        assert cpu.instr.bin == "1111101001010000"

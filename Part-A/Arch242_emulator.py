@@ -9,7 +9,8 @@ import pyxel
 import subprocess
 
 BASE_DIR = Path(__file__).resolve().parent
-ASM_PATH = BASE_DIR / "assembler" / "asm_assembler.py"
+ASM_PATH = BASE_DIR / "Arch242_output_file.asm"
+
 
 """
 TODO:
@@ -103,7 +104,7 @@ class Pyxel:
                     j=0
         # print(self.led_matrix)
 
-    def _write_cell(self, mem_addr, val):
+    def _write_cell(self, mem_addr: int, val):
         for row in range(self.rows):
             for col in range(self.cols):
                 cell = self.led_matrix[row][col]
@@ -269,6 +270,7 @@ class Arch242Emulator: # CPU
         self.DataMem = DataMemory()
         self.InstMem = InstructionMemory()
         self.load_instructions()
+
         
     def clock_tick(self) -> None:
         self.instr: str = self.fetch()
@@ -276,7 +278,6 @@ class Arch242Emulator: # CPU
         if (self.instr):
             self.decode()
             self.execute()
-        
         self.clock_cycle += 1
         
         return
@@ -284,18 +285,20 @@ class Arch242Emulator: # CPU
     def load_instructions(self) -> None:
         # Run the assembler first 
         
-        subprocess.run(["python", ASM_PATH], check=True)
-
-        with open(Path(emu_u.PATH), "r") as f:
+        with open(Path(ASM_PATH), "r") as f:
             assembled = f.readlines()
 
         for line in assembled:
             if (line[:5] == ".byte"):
                 self.DataMem.Data[self.DataMem.addr] = line.strip()
                 self.DataMem.addr += 1
-            else: 
+            elif (emu_u.is_binary_string(line)): 
                 self.InstMem.mem[self.InstMem.addr] = line.strip()
                 self.InstMem.addr += 1
+            elif not (emu_u.is_binary_string(line)):
+                self.InstMem.mem[self.InstMem.addr] = asm_u.hex_to_bin(line).strip()
+                self.InstMem.addr += 1
+        print(self.InstMem.mem)
         return
         
     def fetch(self) -> str:
@@ -304,7 +307,7 @@ class Arch242Emulator: # CPU
             return instruction
         
     def decode(self) -> None:
-   
+        
         opcode_bits = "100X" if self.instr[:4] == "1001" or self.instr[:4] == "1000" else self.instr[:4]
 
         type: str = dasm.instr_type[opcode_bits]
@@ -315,8 +318,9 @@ class Arch242Emulator: # CPU
             self.instr += self.fetch() # 16 bit instruction
         else: 
             self.instr = self.instr # pc += 1
-
+        
         token: str = dasm.instruction_map[self.instr]().split()[0]
+
         is_branch = True if token in dasm.jump_or_branch else False
         self.instr: Instructions = Instructions(type, self.instr, int(asm_u.to_strbin(self.instr), 2), is_branch)
         
@@ -331,9 +335,7 @@ class Arch242Emulator: # CPU
             case "Type4":
                 self.emu_i._type4()
             case "Type5":
-                # print(self.RegFile['ACC'])
                 self.emu_i._type5()
-                # print(self.RegFile['ACC'])
             case "Type6":
                 self.emu_i._type6()
             case "Type7":
@@ -365,7 +367,7 @@ class Arch242Emulator: # CPU
 
 def main():
     cpu = Arch242Emulator()
-    Pyxel(cpu)
+    # Pyxel(cpu)
 
 if __name__ == "__main__":
     main()
