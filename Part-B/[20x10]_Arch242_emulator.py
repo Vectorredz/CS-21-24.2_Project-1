@@ -2,11 +2,10 @@ import emulator.disassembler as dasm
 from emulator import emu_utils as emu_u
 from emulator.emu_instructions import EmulatorInstructions
 from assembler import asm_utils as asm_u
-
+from sys import argv
 from dataclasses import dataclass
 from pathlib import Path
 import pyxel
-import subprocess
 
 BASE_DIR = Path(__file__).resolve().parent
 ASM_PATH = BASE_DIR / "assembler" / "asm_assembler.py"
@@ -88,6 +87,9 @@ class Pyxel:
     def update(self):
         self._write_cell(self.mem_addr, self.emulator.RegFile['IOA'])
         self.emulator.clock_tick()
+    
+    def draw(self):
+        self._draw_cell()
       
     def _draw_cell(self):
         pyxel.rect(0, 0, emu_u.GAME_WIDTH, emu_u.SCREEN_HEIGHT, 3)
@@ -106,8 +108,8 @@ class Pyxel:
                 pyxel.blt(x,y,0,12,0,12,12)
                 # pyxel.rectb(x, y, emu_u.DIM, emu_u.DIM, 0)
                 # color = 11 if self.led_matrix[row][col].state == 1 else 6
-                # pyxel.rect(x, y, emu_u.DIM - 1, emu_u.DIM - 1, color)
-        self._draw_snake(offset_x  * emu_u.DIM, offset_y  * emu_u.DIM)
+                # pyxel.rect(x, y, emu_u.DIM - 1, emu_u.DIM - 1, color)        
+        
     def _draw_title(self):
           # S
         pyxel.blt(emu_u.GAME_WIDTH + 10, 10, 0, 0,24,16,16)
@@ -147,8 +149,6 @@ class Pyxel:
         pyxel.text(self._center("to change direction"), 120, "to change direction", 7)
         pyxel.blt(emu_u.GAME_WIDTH + 35, 86, 0, 10,57,40,20, 0)
   
-    def draw(self):
-        self._draw_cell()
 
 class Arch242Emulator: # CPU
     def __init__(self):  
@@ -173,14 +173,12 @@ class Arch242Emulator: # CPU
         if (self.instr):
             self.decode()
             self.execute()
-        
         self.clock_cycle += 1
         
         return
     
     def load_instructions(self):
         # Run the assembler first 
-        subprocess.run(["python", ASM_PATH], check=True)
 
         with open(Path(emu_u.PATH), "r") as f:
             assembled = f.readlines()

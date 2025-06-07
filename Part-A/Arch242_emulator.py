@@ -2,14 +2,14 @@ import emulator.disassembler as dasm
 from emulator import emu_utils as emu_u
 from emulator.emu_instructions import EmulatorInstructions
 from assembler import asm_utils as asm_u
-
+from sys import argv
 from dataclasses import dataclass
 from pathlib import Path
 import pyxel
 import subprocess
 
 BASE_DIR = Path(__file__).resolve().parent
-ASM_PATH = BASE_DIR / "Arch242_output_file.asm"
+ASM_PATH = BASE_DIR / argv[1]
 
 
 """
@@ -85,7 +85,7 @@ class Pyxel:
         self.score = 0 
         self._build_matrix()
         # self.print_matrix()
-        pyxel.init(self.screen_width, self.screen_height, fps=1)
+        pyxel.init(self.screen_width, self.screen_height, fps=30)
         pyxel.load(str(Path("assets/snake.pyxres")))
         pyxel.run(self.update, self.draw)
 
@@ -249,6 +249,7 @@ class Pyxel:
         self._draw_title()
 
 class Arch242Emulator: # CPU
+    
     def __init__(self) -> None:  
         # # --- Special Registers,General Purpose Registers, I/O # Registers
         self.PC: int = 0x0000
@@ -270,6 +271,7 @@ class Arch242Emulator: # CPU
         self.DataMem = DataMemory()
         self.InstMem = InstructionMemory()
         self.load_instructions()
+        self.instr: str = self.fetch()
 
         
     def clock_tick(self) -> None:
@@ -289,16 +291,16 @@ class Arch242Emulator: # CPU
             assembled = f.readlines()
 
         for line in assembled:
+            line = line.strip()
             if (line[:5] == ".byte"):
-                self.DataMem.Data[self.DataMem.addr] = line.strip()
+                self.DataMem.Data[self.DataMem.addr] = line
                 self.DataMem.addr += 1
             elif (emu_u.is_binary_string(line)): 
-                self.InstMem.mem[self.InstMem.addr] = line.strip()
+                self.InstMem.mem[self.InstMem.addr] = line
                 self.InstMem.addr += 1
             elif not (emu_u.is_binary_string(line)):
-                self.InstMem.mem[self.InstMem.addr] = asm_u.hex_to_bin(line).strip()
+                self.InstMem.mem[self.InstMem.addr] = asm_u.hex_to_bin(line)
                 self.InstMem.addr += 1
-        print(self.InstMem.mem)
         return
         
     def fetch(self) -> str:
@@ -313,7 +315,7 @@ class Arch242Emulator: # CPU
         type: str = dasm.instr_type[opcode_bits]
 
         if type in dasm.instr_16_bit or self.instr == "00110111": # shutdown
-            self.PC += 1 # essentially pc += 2 
+            self.PC += 1 
             # self.InstMem.instr_16 = True
             self.instr += self.fetch() # 16 bit instruction
         else: 
@@ -367,7 +369,7 @@ class Arch242Emulator: # CPU
 
 def main():
     cpu = Arch242Emulator()
-    # Pyxel(cpu)
+    Pyxel(cpu)
 
 if __name__ == "__main__":
     main()
