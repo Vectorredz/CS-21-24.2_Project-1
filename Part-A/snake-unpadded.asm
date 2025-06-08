@@ -41,6 +41,7 @@ clr-cf
 sub-mba -- move up 1 row (-5 IDs)
 to-mdc -- store to lower nibble
 r4 0
+--!
 bnez-cf ------------ BRANCH_TO: NEXT_CELL_up_dec
 --!
 ret
@@ -84,6 +85,7 @@ to-reg 1
 addc-mba -- add any possible overflows
 to-mba
 r4 0
+--!
 ret
 from-reg 2 ------------ BRANCH: NEXT_CELL_left
 rarb 245 -- store initial pointer for possible use later
@@ -112,6 +114,7 @@ to-mdc
 b-bit 3 ------------ BRANCH_TO: NEXT_CELL_left_flow
 --!
 r4 0
+--!
 ret
 rarb 245 ------------ BRANCH: NEXT_CELL_left_flow
 --!
@@ -147,6 +150,7 @@ clr-cf
 sub-mba -- decrease ID
 to-mdc -- store to lower nibble
 r4 1
+--!
 bnez-cf ------------ BRANCH_TO: NEXT_CELL_left_flow_dec
 --!
 ret
@@ -187,6 +191,7 @@ to-mdc
 b-bit 0 ------------ BRANCH_TO: NEXT_CELL_right_flow
 --!
 r4 0
+--!
 ret
 rarb 245 ------------ BRANCH: NEXT_CELL_right_flow
 --!
@@ -232,6 +237,7 @@ to-reg 1
 addc-mba -- add any possible underflows
 to-mba
 r4 1
+--!
 ret -------------------- NEXT_CELL end
 from-ioa ---------------------------------------- GAME_LOOP
 rarb 253 -- store new direction to 253 (get current val first if input is 0b0000)
