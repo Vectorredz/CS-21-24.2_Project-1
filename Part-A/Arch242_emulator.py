@@ -2,14 +2,14 @@ import emulator.disassembler as dasm
 from emulator import emu_utils as emu_u
 from emulator.emu_instructions import EmulatorInstructions
 from assembler import asm_utils as asm_u
-
+from sys import argv
 from dataclasses import dataclass
 from pathlib import Path
 import pyxel
 import subprocess
 
 BASE_DIR = Path(__file__).resolve().parent
-ASM_PATH = BASE_DIR / "Arch242_output_file.asm"
+ASM_PATH = BASE_DIR / argv[1]
 
 
 """
@@ -80,12 +80,11 @@ class Pyxel:
         self.rows = 10
         self.cols = 20
         self.mid = emu_u.SCREEN_WIDTH // 2
-        self.mem_addr = 192
         self.emulator = emulator
         self.score = 0 
         self._build_matrix()
         # self.print_matrix()
-        pyxel.init(self.screen_width, self.screen_height, fps=1)
+        pyxel.init(self.screen_width, self.screen_height, fps=3)
         pyxel.load(str(Path("assets/snake.pyxres")))
         pyxel.run(self.update, self.draw)
 
@@ -116,8 +115,7 @@ class Pyxel:
             print("".join("1" if cell.state else "0" for cell in row))  
 
     def update(self):
-        # print(self.emulator.RegFile['IOA'])
-        self._write_cell(self.mem_addr, self.emulator.RegFile['IOA'])
+        self._write_cell(self.emulator.RBRA, self.emulator.RegFile['ACC'])
         self.emulator.clock_tick()
       
     def _draw_cell(self):
@@ -202,7 +200,7 @@ class Pyxel:
             pyxel.text(left + 90, top, "no fetched", text_color)
 
         pyxel.text(left + 10, top + 2 *  line_height, "PROGRAM COUNTER:", text_color)
-        pyxel.text(left + 110, top + 2 * line_height, f"{self.emulator.PC}", text_color)
+        pyxel.text(left + 110, top + 2 * line_height, f"{self.emulator.RBRA}", text_color)
 
         pyxel.text(left + 10, top + 3 * line_height, "CPU CLOCK CYCLE:", text_color)
         # pyxel.text(left + 110, top + 2 * line_height, f"{self.emulator.clock}", text_color)
@@ -249,6 +247,7 @@ class Pyxel:
         self._draw_title()
 
 class Arch242Emulator: # CPU
+    
     def __init__(self) -> None:  
         # # --- Special Registers,General Purpose Registers, I/O # Registers
         self.PC: int = 0x0000
@@ -257,9 +256,8 @@ class Arch242Emulator: # CPU
         self.RegFile: RegisterFile = RegisterFile()
 
         self.CFACC: int = 0
-        self.RBRA: int = 0b1100
         self.RDRC: int = 0
-
+        self.RBRA: int = 0
         # Init System
         self.clock_cycle: int = 0
         self.instr: str = " "
@@ -273,13 +271,14 @@ class Arch242Emulator: # CPU
 
         
     def clock_tick(self) -> None:
+        # self.load_instructions()
         self.instr: str = self.fetch()
+        print(self.instr)
         self.iohardware()
         if (self.instr):
             self.decode()
             self.execute()
         self.clock_cycle += 1
-        
         return
     
     def load_instructions(self) -> None:
@@ -289,16 +288,16 @@ class Arch242Emulator: # CPU
             assembled = f.readlines()
 
         for line in assembled:
-            if (line[:5] == ".byte"):
-                self.DataMem.Data[self.DataMem.addr] = line.strip()
+            line = line.strip()
+            if (line.startswith(".byte")):
+                self.DataMem.mem[self.DataMem.addr] = int(line[6:], 16)
                 self.DataMem.addr += 1
             elif (emu_u.is_binary_string(line)): 
-                self.InstMem.mem[self.InstMem.addr] = line.strip()
+                self.InstMem.mem[self.InstMem.addr] = line
                 self.InstMem.addr += 1
-            elif not (emu_u.is_binary_string(line)):
-                self.InstMem.mem[self.InstMem.addr] = asm_u.hex_to_bin(line).strip()
-                self.InstMem.addr += 1
-        print(self.InstMem.mem)
+        #     # elif not (emu_u.is_binary_string(line)):
+        #     #     self.InstMem.mem[self.InstMem.addr] = asm_u.hex_to_bin(line)
+        #     #     self.InstMem.addr += 1
         return
         
     def fetch(self) -> str:
@@ -313,7 +312,7 @@ class Arch242Emulator: # CPU
         type: str = dasm.instr_type[opcode_bits]
 
         if type in dasm.instr_16_bit or self.instr == "00110111": # shutdown
-            self.PC += 1 # essentially pc += 2 
+            self.PC += 1 
             # self.InstMem.instr_16 = True
             self.instr += self.fetch() # 16 bit instruction
         else: 
@@ -356,7 +355,7 @@ class Arch242Emulator: # CPU
                 self.emu_i._type14()
             case "Type15":
                 self.emu_i._type15()
-
+                
     def iohardware(self) -> None:
         self.RegFile['IOA'] = self.RegFile['IOA'] | 0b0001 if pyxel.btn(pyxel.KEY_UP) else self.RegFile['IOA'] & 0b1110
         self.RegFile['IOA'] = self.RegFile['IOA'] | 0b0010 if pyxel.btn(pyxel.KEY_DOWN) else self.RegFile['IOA'] & 0b1101
@@ -367,7 +366,7 @@ class Arch242Emulator: # CPU
 
 def main():
     cpu = Arch242Emulator()
-    # Pyxel(cpu)
+    Pyxel(cpu)
 
 if __name__ == "__main__":
     main()

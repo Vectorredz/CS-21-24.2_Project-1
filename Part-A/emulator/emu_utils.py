@@ -25,5 +25,5 @@ HEX_8L4 = 0x0F
 HEX_8U4 = 0xF0
 
 def is_binary_string(s):
+    s = str(s)
     return len(s) > 0 and all(c in '01' for c in s)
-

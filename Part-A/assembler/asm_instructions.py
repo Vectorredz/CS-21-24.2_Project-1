@@ -1,6 +1,6 @@
 from typing import Callable
-from asm_utils import fix_width, to_bin, is_label, get_label_name
-from asm_directives import label_map
+from assembler.asm_utils import fix_width, to_bin, is_label, get_label_name
+from assembler.asm_directives import label_map
 
 type InstEncoder = Callable
 

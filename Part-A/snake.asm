@@ -517,13 +517,13 @@ beqz GAME_LOOP_oob_row ------------ BRANCH_TO: GAME_LOOP_oob_row
 --!
 rarb 6 -- compare column borders if oob
 --!
-acc 0b1100 -- 192, 197, 202, 207
+acc 12 -- 192, 197, 202, 207
 xor-ba
 bnez GAME_LOOP_oob_col_1101 ------------ BRANCH_TO: GAME_LOOP_oob_col_1101
 --!
 rarb 5
 --!
-acc 0b0000 -- 1100 + (lower nibble)
+acc 0 -- 1100 + (lower nibble)
 xor-ba
 b __GAME_LOOP_oob_col_1100_skip1
 --!
@@ -543,7 +543,7 @@ nop
 nop
 __GAME_LOOP_oob_col_1100_skip1: beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-acc 0b0101 -- 1100 + (lower nibble)
+acc 5 -- 1100 + (lower nibble)
 xor-ba
 b __GAME_LOOP_oob_col_1100_skip2
 --!
@@ -575,7 +575,7 @@ nop
 nop
 beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-acc 0b1010 -- 1100 + (lower nibble)
+acc 10 -- 1100 + (lower nibble)
 xor-ba
 b __GAME_LOOP_oob_col_1100_skip3
 --!
@@ -607,7 +607,7 @@ nop
 nop
 beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-acc 0b1111 -- 1100 + (lower nibble)
+acc 15 -- 1100 + (lower nibble)
 xor-ba
 b __GAME_LOOP_oob_col_1100_skip4
 --!
@@ -647,13 +647,13 @@ nop
 nop
 nop
 nop
-GAME_LOOP_oob_col_1101: acc 0b1101 -- 212, 217, 222 ------------ BRANCH: GAME_LOOP_oob_col_1101
+GAME_LOOP_oob_col_1101: acc 13 -- 212, 217, 222 ------------ BRANCH: GAME_LOOP_oob_col_1101
 xor-ba
 bnez GAME_LOOP_oob_col_1110 ------------ BRANCH_TO: GAME_LOOP_oob_col_1110
 --!
 rarb 5
 --!
-acc 0b0100 -- 1101 + (lower nibble)
+acc 4 -- 1101 + (lower nibble)
 xor-ba
 nop
 nop
@@ -671,7 +671,7 @@ nop
 nop
 beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-acc 0b1001 -- 1101 + (lower nibble)
+acc 9 -- 1101 + (lower nibble)
 xor-ba
 b __GAME_LOOP_oob_col_1101_skip1
 --!
@@ -703,7 +703,7 @@ nop
 nop
 beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-acc 0b1110 -- 1101 + (lower nibble)
+acc 14 -- 1101 + (lower nibble)
 xor-ba
 b __GAME_LOOP_oob_col_1101_skip2
 --!
@@ -745,7 +745,7 @@ nop
 nop
 nop
 nop
-GAME_LOOP_oob_col_1110: acc 0b1110 GAME_LOOP_oob_col_1110 -- 227. 232, ------------ BRANCH: GAME_LOOP_oob_col_1110
+GAME_LOOP_oob_col_1110: acc 14 GAME_LOOP_oob_col_1110 -- 227. 232, ------------ BRANCH: GAME_LOOP_oob_col_1110
 xor-ba
 b __GAME_LOOP_oob_col_1110_skip1
 --!
@@ -773,7 +773,7 @@ bnez GAME_LOOP_oob_row ------------ BRANCH_TO: GAME_LOOP_oob_row
 --!
 rarb 5
 --!
-acc 0b0011 -- 1110 + (lower nibble)
+acc 3 -- 1110 + (lower nibble)
 xor-ba
 b __GAME_LOOP_oob_col_1110_skip2
 --!
@@ -799,8 +799,9 @@ nop
 nop
 beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-acc 0b1000 -- 1110 + (lower nibble)
+acc 8 -- 1110 + (lower nibble)
 xor-ba
+b __GAME_LOOP_oob_col_1110_skip3
 b __GAME_LOOP_oob_col_1110_skip3
 --!
 nop
@@ -831,8 +832,9 @@ nop
 nop
 beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-acc 0b1101 -- 1110 + (lower nibble)
+acc 13 -- 1110 + (lower nibble)
 xor-ba
+b __GAME_LOOP_oob_col_1110_skip4
 b __GAME_LOOP_oob_col_1110_skip4
 --!
 nop
@@ -865,7 +867,7 @@ beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
 nop
 nop
-GAME_LOOP_oob_row: acc 0b1100 ------------ BRANCH: GAME_LOOP_oob_row
+GAME_LOOP_oob_row: acc 12 ------------ BRANCH: GAME_LOOP_oob_row
 rarb 243 -- check if lower than 192: subtract 0b1100 and check if underflow (upper nibble of 192)
 --!
 to-mba
@@ -895,7 +897,7 @@ nop
 __GAME_LOOP_oob_row_skip: nop
 bnez-cf GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-acc 0b1111 -- check if upper nibble is 1111
+acc 15 -- check if upper nibble is 1111
 rarb 6
 --!
 xor-ba
@@ -907,7 +909,7 @@ from-mba
 rarb 242
 --!
 to-mba
-acc 0b0001
+acc 31
 clr-cf
 sub-mba
 nop
@@ -1105,7 +1107,7 @@ rarb 243 -- if upper nibble is not 0b0000 then just skip lower nibble check
 xor-ba
 bnez GAME_LOOP_food_miss_shift_cont ------------ BRANCH_TO: GAME_LOOP_food_miss_shift_cont
 --!
-acc 0b1101 -- set sub-mba arg to 0b1101
+acc 13 -- set sub-mba arg to 0b1101
 rarb 244
 --!
 to-mba
@@ -1359,21 +1361,8 @@ rarb 251 -- add to RNG
 --!
 add-mba
 to-mba
-acc 0b1100
+acc 12
 and*-mba -- set upper nibble upper two bits to 1 (since 192-241 are all 11XX)
-
-
-
-
-
-
-
-
-
-
-
-
-
 .byte 0x03  ---- length (lower nibble)
 .byte 0x00  ---- length (upper nibble)
 .byte 0x00  ---- food address ID (lower nibble)

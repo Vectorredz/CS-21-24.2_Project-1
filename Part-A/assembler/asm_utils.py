@@ -27,6 +27,7 @@ def hex_to_bin(value):
 
 def is_label(line):
     """Check if line is a label definition"""
+    line = line.strip()
     return line.endswith(':')
 
 def get_label_name(line):

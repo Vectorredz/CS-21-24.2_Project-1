@@ -1,4 +1,174 @@
-11100001
+from typing import Dict, Callable
+
+# Define instruction mappings
+INSTRUCTION_MAP: Dict[str, str] = {
+    # Type 1 instructions
+    "00000000": "rot-r",
+    "00000001": "rot-l",
+    "00000010": "rot-rc",
+    "00000011": "rot-lc",
+    "00000100": "from-mba",
+    "00000101": "to-mba",
+    "00000110": "from-mdc",
+    "00000111": "to-mdc",
+    "00001000": "addc-mba",
+    "00001001": "add-mba",
+    "00001010": "subc-mba",
+    "00001011": "sub-mba",
+    "00001100": "inc*-mba",
+    "00001101": "dec*-mba",
+    "00001110": "inc*-mdc",
+    "00001111": "dec*-mdc",
+    
+    # Type 2 instructions
+    "00011010": "and-ba",
+    "00011011": "xor-ba",
+    "00011100": "or-ba",
+    "00011101": "and*-mba",
+    "00011110": "xor*-mba",
+    "00011111": "or*-mba",
+    
+    # Type 3 instructions
+    "00101010": "clr-cf",
+    "00101011": "set-cf",
+    "00101110": "ret",
+    
+    # Type 4 instructions
+    "00110010": "from-ioa",
+    "00110001": "inc",
+    "00110110": "bcd",
+    "0011011100111110": "shutdown",
+    "00111110": "nop",
+    "00111111": "dec",
+}
+
+# Register mappings
+REGISTERS = {
+    "000": "0",
+    "001": "1",
+    "010": "2",
+    "011": "3",
+    "100": "4"
+}
+
+def disassemble_instruction(binary: str) -> str:
+    # Check for special 16-bit instructions first
+    if binary.startswith("0011011100111110"):
+        return "shutdown", 2
+    
+    # Check for 8-bit instructions in the map
+    if len(binary) >= 8 and binary[:8] in INSTRUCTION_MAP:
+        return INSTRUCTION_MAP[binary[:8]], 1
+    
+    # Handle Type 5 instructions (arithmetic with immediate)
+    if binary.startswith("0100"):
+        opcode = binary[:8]
+        imm = binary[12:16]
+        if opcode == "01000000":
+            return f"add {int(imm, 2)}", 2
+        elif opcode == "01000001":
+            return f"sub {int(imm, 2)}", 2
+        elif opcode == "01000010":
+            return f"and {int(imm, 2)}", 2
+        elif opcode == "01000011":
+            return f"xor {int(imm, 2)}", 2
+        elif opcode == "01000100":
+            return f"or {int(imm, 2)}", 2
+        elif opcode == "01000110":
+            return f"r4 {int(imm, 2)}", 2
+    
+    # Handle Type 6 instructions (register pairs)
+    if binary.startswith("0101") or binary.startswith("0110"):
+        ar = binary[:4]
+        imm = binary[4:12]
+        if ar == "0101":
+            return f"rarb {int(imm, 2)}", 2
+        elif ar == "0110":
+            return f"rcrd {int(imm, 2)}", 2
+    
+    # Handle Type 7 instructions (acc immediate)
+    if binary.startswith("0111"):
+        imm = binary[4:8]
+        return f"acc {int(imm, 2)}", 1
+    
+    # Handle Type 8 instructions (b-bit)
+    if binary.startswith("100"):
+        k = binary[3:5]
+        imm = binary[5:16]
+        return f"b-bit {int(k, 2)} {int(imm, 2)}", 2
+    
+    # Handle Type 9-13 instructions (branches)
+    if binary.startswith("10100"):
+        return f"bnz-a {int(binary[5:16], 2)}", 2
+    elif binary.startswith("10101"):
+        return f"bnz-b {int(binary[5:16], 2)}", 2
+    elif binary.startswith("10110"):
+        return f"beqz {int(binary[5:16], 2)}", 2
+    elif binary.startswith("10111"):
+        return f"bnez {int(binary[5:16], 2)}", 2
+    elif binary.startswith("11000"):
+        return f"beqz-cf {int(binary[5:16], 2)}", 2
+    elif binary.startswith("11001"):
+        return f"bnez-cf {int(binary[5:16], 2)}", 2
+    elif binary.startswith("11011"):
+        return f"bnz-d {int(binary[5:16], 2)}", 2
+    
+    # Handle Type 14-15 instructions (b/call)
+    if binary.startswith("1110"):
+        imm = binary[4:16]
+        return f"b {int(imm, 2)}", 2
+    elif binary.startswith("1111"):
+        imm = binary[4:16]
+        return f"call {int(imm, 2)}", 2
+    
+    # Handle register operations (Type 2 variants)
+    if binary.startswith("0001") or binary.startswith("0010"):
+        reg = binary[4:7]
+        op = binary[7]
+        if binary.startswith("0001"):
+            return f"{'inc*-reg' if op == '0' else 'dec*-reg'} {REGISTERS[reg]}", 1
+        elif binary.startswith("0010"):
+            return f"{'to-reg' if op == '0' else 'from-reg'} {REGISTERS[reg]}", 1
+    
+    return f"; Unknown instruction: {binary[:8]}", 1
+
+def disassemble(binary_code: str) -> str:
+    # Split into individual lines and remove empty lines
+    lines = [line.strip() for line in binary_code.split('\n') if line.strip()]
+    
+    output = []
+    address = 0
+    
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        
+        # Check if we need to combine two 8-bit lines for a 16-bit instruction
+        if (i + 1 < len(lines) and 
+            (line.startswith("0100") or  # Type 5
+             line.startswith("0101") or  # Type 6
+             line.startswith("0110") or  # Type 6
+             line.startswith("100") or   # Type 8
+             line.startswith("101") or   # Type 9-13
+             line.startswith("110") or   # Type 9-13
+             line.startswith("111") or   # Type 14-15
+             (line.startswith("00110111") and lines[i+1].startswith("00111110")))):  # shutdown
+            
+            combined = line + lines[i+1]
+            instruction, size = disassemble_instruction(combined)
+            output.append(f"{(address+1):04d}: {instruction}")
+            address += size
+            i += size
+        else:
+            instruction, size = disassemble_instruction(line)
+            output.append(f"{(address+1):04d}: {instruction}")
+            address += size
+            i += 1
+    
+    return '\n'.join(output)
+
+# Example usage
+binary_input = """11100001
 10100000
 00100001
 01100010
@@ -1336,18 +1506,11 @@
 00000101
 01111100
 00011101
-.byte 0x03
-.byte 0x00
-.byte 0x00
-.byte 0xda
-.byte 0x01
-.byte 0x00
-.byte 0x0c
-.byte 0x01
-.byte 0x00
-.byte 0x0c
-.byte 0x04
-.byte 0x0e
-.byte 0x00
-.byte 0x04
-.byte 0x04
+"""
+
+disassembled_code = disassemble(binary_input)
+print(disassembled_code)
+
+# Save to a file
+with open("disassembled.asm", "w") as f:
+    f.write(disassembled_code)
