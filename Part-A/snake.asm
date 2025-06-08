@@ -1342,7 +1342,7 @@ nop
 nop
 nop
 GAME_DEATH: shutdown ------------ BRANCH: GAME_DEATH
-nop
+--!
 nop
 GAME_LOOP_food_spawn: rarb 253 ------------ BRANCH: GAME_LOOP_food_spawn
 --! -- spawn new food (final operation yay!!! >_<)

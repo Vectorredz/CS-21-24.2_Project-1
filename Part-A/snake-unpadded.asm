@@ -568,6 +568,7 @@ beqz ------------ BRANCH_TO: GAME_LOOP
 b ------------ BRANCH_TO: GAME_LOOP_food_spawn
 --!
 shutdown ------------ BRANCH: GAME_DEATH
+--!
 rarb 253 ------------ BRANCH: GAME_LOOP_food_spawn
 --! -- spawn new food (final operation yay!!! >_<)
 from-mba -- get new dir again
