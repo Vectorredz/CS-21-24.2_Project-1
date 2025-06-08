@@ -65,9 +65,9 @@ clr-cf
 sub-mba -- move up 1 row (-5 IDs)
 to-mdc -- store to lower nibble
 r4 0
+--!
 bnez-cf NEXT_CELL_up_dec ------------ BRANCH_TO: NEXT_CELL_up_dec
 --!
-nop
 nop
 nop
 nop
@@ -97,6 +97,7 @@ nop
 nop
 nop
 nop
+nop
 NEXT_CELL_up_dec: rcrd 242 ------------ BRANCH: NEXT_CELL_up_dec
 --! -- copy upper nibble address to RB:RA
 from-mdc
@@ -106,7 +107,6 @@ rcrd 243
 from-mdc
 to-reg 1
 dec*-mba -- decrease upper nibble if CF underflow bit is 1
-nop
 nop
 nop
 nop
@@ -173,7 +173,7 @@ to-reg 1
 addc-mba -- add any possible overflows
 to-mba
 r4 0
-nop
+--!
 nop
 nop
 ret
@@ -204,7 +204,7 @@ to-mdc
 b-bit 3 NEXT_CELL_left_flow ------------ BRANCH_TO: NEXT_CELL_left_flow
 --!
 r4 0
-nop
+--!
 nop
 nop
 nop
@@ -267,12 +267,13 @@ clr-cf
 sub-mba -- decrease ID
 to-mdc -- store to lower nibble
 r4 1
+--!
 bnez-cf NEXT_CELL_left_flow_dec ------------ BRANCH_TO: NEXT_CELL_left_flow_dec
 --!
 nop
 nop
-nop
 ret
+nop
 nop
 nop
 nop
@@ -308,7 +309,6 @@ rcrd 243
 from-mdc
 to-reg 1
 dec*-mba -- decrease upper nibble if CF underflow bit is 1
-nop
 nop
 nop
 nop
@@ -366,7 +366,7 @@ to-mdc
 b-bit 0 NEXT_CELL_right_flow ------------ BRANCH_TO: NEXT_CELL_right_flow
 --!
 r4 0
-nop
+--!
 nop
 ret
 nop
@@ -439,7 +439,7 @@ to-reg 1
 addc-mba -- add any possible underflows
 to-mba
 r4 1
-nop
+--!
 nop
 nop
 nop
