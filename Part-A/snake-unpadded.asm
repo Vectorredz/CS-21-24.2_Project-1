@@ -250,6 +250,7 @@ to-reg 4 -- setup call args
 rarb 5
 --!
 call 0 ------------ NEXT_CELL(input, &snake-head)
+--!
 from-reg 4
 beqz ------------ BRANCH_TO: GAME_LOOP_oob_row
 --!
