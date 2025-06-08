@@ -21,7 +21,7 @@ b-bit 2 NEXT_CELL_left ------------ BRANCH_TO: NEXT_CELL_left
 --!
 b-bit 3 NEXT_CELL_right ------------ BRANCH_TO: NEXT_CELL_right
 --!
-nop
+nop -- this should be unreachable
 nop
 nop
 nop
@@ -77,10 +77,10 @@ nop
 nop
 nop
 nop
+nop
+nop
+nop
 ret
-nop
-nop
-nop
 nop
 nop
 nop
@@ -109,7 +109,39 @@ dec*-mba -- decrease upper nibble if CF underflow bit is 1
 nop
 nop
 nop
+nop
+nop
+nop
 ret
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
 nop
 NEXT_CELL_down: acc 1 ------------ BRANCH: NEXT_CELL_down
 rarb 242 -- move pointer to ID upper nibble first
@@ -141,10 +173,10 @@ to-reg 1
 addc-mba -- add any possible overflows
 to-mba
 r4 0
+nop
+nop
+nop
 ret
-nop
-nop
-nop
 NEXT_CELL_left: from-reg 2 ------------ BRANCH: NEXT_CELL_left
 rarb 245 -- store initial pointer for possible use later
 --!
@@ -173,10 +205,10 @@ b-bit 3 NEXT_CELL_left_flow ------------ BRANCH_TO: NEXT_CELL_left_flow
 --!
 r4 0
 nop
+nop
+nop
+nop
 ret
-nop
-nop
-nop
 nop
 nop
 nop
@@ -237,10 +269,10 @@ to-mdc -- store to lower nibble
 r4 1
 bnez-cf NEXT_CELL_left_flow_dec ------------ BRANCH_TO: NEXT_CELL_left_flow_dec
 --!
+nop
+nop
+nop
 ret
-nop
-nop
-nop
 nop
 nop
 nop
@@ -285,10 +317,10 @@ nop
 nop
 nop
 nop
+nop
+nop
+nop
 ret
-nop
-nop
-nop
 nop
 nop
 nop
@@ -336,20 +368,20 @@ b-bit 0 NEXT_CELL_right_flow ------------ BRANCH_TO: NEXT_CELL_right_flow
 r4 0
 nop
 nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
 ret
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
 nop
 nop
 nop
@@ -413,7 +445,23 @@ nop
 nop
 nop
 nop
+nop
+nop
+nop
 ret -------------------- NEXT_CELL end
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
 GAME_LOOP: from-ioa ---------------------------------------- GAME_LOOP
 rarb 253 -- store new direction to 253 (get current val first if input is 0b0000)
 --!
@@ -442,13 +490,6 @@ nop
 nop
 nop
 nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
 GAME_LOOP_input: to-mba ------------ BRANCH: GAME_LOOP_input
 to-reg 4 -- setup call args
 rarb 5
@@ -458,8 +499,6 @@ nop
 call 0 ------------ NEXT_CELL(input, &snake-head)
 --!
 from-reg 4
-b __GAME_LOOP_input_skip
---!
 nop
 nop
 nop
@@ -468,13 +507,6 @@ nop
 nop
 nop
 nop
-nop
-nop
-nop
-nop
-nop
-nop
-__GAME_LOOP_input_skip: nop
 nop
 nop
 nop
@@ -769,7 +801,7 @@ beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
 acc 0b1000 -- 1110 + (lower nibble)
 xor-ba
-b __GAME_LOOP_oob_col_1101_skip3
+b __GAME_LOOP_oob_col_1110_skip3
 --!
 nop
 nop
@@ -801,7 +833,7 @@ beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
 acc 0b1101 -- 1110 + (lower nibble)
 xor-ba
-b __GAME_LOOP_oob_col_1101_skip4
+b __GAME_LOOP_oob_col_1110_skip4
 --!
 nop
 nop
