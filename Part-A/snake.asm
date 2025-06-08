@@ -1,6 +1,6 @@
 b GAME_LOOP ------------ BRANCH_TO: GAME_LOOP
 --!
-from-reg 0 -------------------- function NEXT_CELL(direction RE, CELL pointer RB:RA)
+NEXT_CELL: from-reg 0 -------------------- function NEXT_CELL(direction RE, CELL pointer RB:RA)
 rcrd 242 -- temporarily store CELL pointer
 --!
 to-mdc
@@ -465,7 +465,7 @@ nop
 GAME_LOOP: from-ioa ---------------------------------------- GAME_LOOP
 rarb 253 -- store new direction to 253 (get current val first if input is 0b0000)
 --!
-beqz GAME_LOOP_input ------------ BRANCH_TO: GAME_LOOP_input
+bnez GAME_LOOP_input ------------ BRANCH_TO: GAME_LOOP_input
 --!
 from-mba
 b __GAME_LOOP_input_skip
@@ -496,7 +496,7 @@ rarb 5
 --!
 nop
 nop
-call 0 ------------ NEXT_CELL(input, &snake-head)
+call NEXT_CELL ------------ NEXT_CELL(input, &snake-head)
 --!
 from-reg 4
 nop
@@ -745,7 +745,7 @@ nop
 nop
 nop
 nop
-GAME_LOOP_oob_col_1110: acc 0b1110 GAME_LOOP_oob_col_1110 -- 227. 232, ------------ BRANCH: GAME_LOOP_oob_col_1110
+GAME_LOOP_oob_col_1110: acc 0b1110 -- 227. 232, 237 ------------ BRANCH: GAME_LOOP_oob_col_1110
 xor-ba
 b __GAME_LOOP_oob_col_1110_skip1
 --!
@@ -1024,7 +1024,7 @@ nop
 nop
 nop
 nop
-call 0 -- NEXT_CELL(queue-head dir, &snake-tail)
+call NEXT_CELL -- NEXT_CELL(queue-head dir, &snake-tail)
 --!
 rarb 12 -- copy queue-tail address to 242-243
 --!
@@ -1361,11 +1361,24 @@ add-mba
 to-mba
 acc 0b1100
 and*-mba -- set upper nibble upper two bits to 1 (since 192-241 are all 11XX)
+
+
+
+
+
+
+
+
+
+
+
+
+-- 0-15
 .byte 0x03  ---- length (lower nibble)
 .byte 0x00  ---- length (upper nibble)
-.byte 0x00  ---- food address ID (lower nibble)
-.byte 0xda  -- food address ID (upper nibble)
-.byte 0x01  -- food address MASK
+.byte 0x0a  ---- food address ID (lower nibble) = 218
+.byte 0x0d -- food address ID (upper nibble) = 218
+.byte 0x01  -- food address MASK = 0b0001
 .byte 0x00  ---- snake-tail address ID (lower nibble) = 192
 .byte 0x0c  -- snake-tail address ID (upper nibble) = 192
 .byte 0x01  -- snake-tail address MASK = 0b0001
@@ -1376,6 +1389,277 @@ and*-mba -- set upper nibble upper two bits to 1 (since 192-241 are all 11XX)
 .byte 0x00  -- queue-tail address (upper nibble)
 .byte 0x04  ---- queue (0b1000 = right)
 .byte 0x04  ---- queue (0b1000 = right)
+.byte 0x00
+
+-- 16-31
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+
+-- 32-47
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+
+-- 48-63
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+
+-- 64-79
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+
+-- 80-95
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+
+-- 96-111
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+
+-- 112-127
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+
+-- 128-143
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+
+-- 144-159
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+
+-- 160-175
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+
+-- 176-191
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+
+-- 192-207
+.byte 0x07 -- initial snake body (0b0111)
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+
+-- 208-223
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x01 -- food address
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+
+-- 224-239
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+
+-- 240-255
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x00
+.byte 0x08 -- direction = 0b1000 (right)
+.byte 0x00 -- score
+.byte 0x00 -- food-ate
 
 -- 0: length (lower nibble)
 -- 1: length (upper nibble)

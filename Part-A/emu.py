@@ -82,9 +82,13 @@ class Pyxel:
         self.mid = emu_u.SCREEN_WIDTH // 2
         self.emulator = emulator
         self.score = 0 
+        
+        self.mem_addr = 192 
+        self.i = 1
+        
         self._build_matrix()
         # self.print_matrix()
-        pyxel.init(self.screen_width, self.screen_height, fps=3)
+        pyxel.init(self.screen_width, self.screen_height, fps=60)
         pyxel.load(str(Path("assets/snake.pyxres")))
         pyxel.run(self.update, self.draw)
 
@@ -103,19 +107,38 @@ class Pyxel:
                     j=0
         # print(self.led_matrix)
 
-    def _write_cell(self, mem_addr: int, val):
-        for row in range(self.rows):
-            for col in range(self.cols):
-                cell = self.led_matrix[row][col]
-                if (cell.memAddr == mem_addr) & (cell.mapbit == val):
-                    self.led_matrix[row][col].state = 1
+    def _write_cell(self):
+        for mem_addr in range(192, 242):
+            val = self.emulator.DataMem.mem[mem_addr]
+            row = (mem_addr-192)//5
+            col_start = (mem_addr-192)%5
+            for i in range(4):
+                col = col_start*4 + i
+                state = val & 1 
+                self.led_matrix[row][col].state = state
+                val >>= 1
+  
+
+        # # for row in range(self.rows):
+        # #     for col in range(self.cols):
+        # #         cell = self.led_matrix[row][col]
+        # #         if (cell.memAddr == mem_addr) & (cell.mapbit == val):
+        # #             self.led_matrix[row][col].state = 1
+        # # 0b0101
+        # row = (mem_addr-192)//5
+        # col_start = (mem_addr-192)%5
+        # for i in range(4):
+        #     col = col_start*4 + i
+        #     if val & 1 == 1:
+        #         self.led_matrix[row][col].state = 1
+        #     val >>= 1
                 
     def print_matrix(self):
         for row in self.led_matrix:
             print("".join("1" if cell.state else "0" for cell in row))  
 
     def update(self):
-        self._write_cell(self.emulator.RBRA, self.emulator.RegFile['ACC'])
+        self._write_cell()
         self.emulator.clock_tick()
       
     def _draw_cell(self):
@@ -136,9 +159,7 @@ class Pyxel:
                     pyxel.blt(x,y,0,0,88,16,16)
                 else:
                     pyxel.blt(x,y,0,16,88,16,16)
-                # pyxel.rectb(x, y, emu_u.DIM, emu_u.DIM, 0)
-        # self._draw_snake(offset_x  * emu_u.DIM, offset_y  * emu_u.DIM)
-
+      
     def _draw_title(self):
            # S
         pyxel.blt(self.mid - 72, 2, 0, 0,24,16,16)
@@ -198,12 +219,14 @@ class Pyxel:
             pyxel.text(left + 90, top, f"{dasm.instruction_map[self.emulator.instr.bin]()}", text_color)
         else:
             pyxel.text(left + 90, top, "no fetched", text_color)
-
+      
         pyxel.text(left + 10, top + 2 *  line_height, "PROGRAM COUNTER:", text_color)
-        pyxel.text(left + 110, top + 2 * line_height, f"{self.emulator.RBRA}", text_color)
-
-        pyxel.text(left + 10, top + 3 * line_height, "CPU CLOCK CYCLE:", text_color)
-        # pyxel.text(left + 110, top + 2 * line_height, f"{self.emulator.clock}", text_color)
+        pyxel.text(left + 110, top + 2 * line_height, f"{self.emulator.PC}", text_color)
+        
+        print(f"{self.emulator.PC}:: {_XD[self.emulator.PC]}")
+        
+        pyxel.text(left + 10, top + 3 * line_height, "LINE:", text_color)
+        # pyxel.text(left + 110, top + 2 * line_height, f"{self.emulator.RBRA}", text_color)
 
         # Visual register marker
         for i in range(7):  # enough for RA–CF
@@ -214,7 +237,7 @@ class Pyxel:
         for i, reg in enumerate(reg_labels):
             y = top + i * line_height
             value = self.emulator.RegFile.get(reg, 0)
-            pyxel.text(bar_x + 10, y, f"{reg}: {value:02X}", text_color)
+            pyxel.text(bar_x + 10, y, f"{reg}: {value:02d}", text_color)
 
     def _draw_hud(self):
         # Clear HUD area (keep original background)
@@ -269,12 +292,13 @@ class Arch242Emulator: # CPU
         self.InstMem = InstructionMemory()
         self.load_instructions()
 
+
         
     def clock_tick(self) -> None:
         # self.load_instructions()
         self.instr: str = self.fetch()
-        print(self.instr)
-        self.iohardware()
+        # print(self.instr)
+        # self.iohardware()
         if (self.instr):
             self.decode()
             self.execute()
@@ -284,6 +308,7 @@ class Arch242Emulator: # CPU
     def load_instructions(self) -> None:
         # Run the assembler first 
         
+        # first pass (.byte)
         with open(Path(ASM_PATH), "r") as f:
             assembled = f.readlines()
 
@@ -292,9 +317,20 @@ class Arch242Emulator: # CPU
             if (line.startswith(".byte")):
                 self.DataMem.mem[self.DataMem.addr] = int(line[6:], 16)
                 self.DataMem.addr += 1
-            elif (emu_u.is_binary_string(line)): 
+            else:
+                continue
+        
+        # second pass (instructions)
+        with open(Path(ASM_PATH), "r") as f:
+            assembled = f.readlines()
+
+        for line in assembled:
+            line = line.strip()
+            if (emu_u.is_binary_string(line)): 
                 self.InstMem.mem[self.InstMem.addr] = line
                 self.InstMem.addr += 1
+            else:
+                continue        
         #     # elif not (emu_u.is_binary_string(line)):
         #     #     self.InstMem.mem[self.InstMem.addr] = asm_u.hex_to_bin(line)
         #     #     self.InstMem.addr += 1
@@ -304,7 +340,6 @@ class Arch242Emulator: # CPU
         if (self.InstMem.mem):
             instruction: str = self.InstMem.mem[self.PC]
             return instruction
-        
     def decode(self) -> None:
         
         opcode_bits = "100X" if self.instr[:4] == "1001" or self.instr[:4] == "1000" else self.instr[:4]
@@ -355,6 +390,8 @@ class Arch242Emulator: # CPU
                 self.emu_i._type14()
             case "Type15":
                 self.emu_i._type15()
+            case _:
+                print(self.PC)
                 
     def iohardware(self) -> None:
         self.RegFile['IOA'] = self.RegFile['IOA'] | 0b0001 if pyxel.btn(pyxel.KEY_UP) else self.RegFile['IOA'] & 0b1110
@@ -363,8 +400,13 @@ class Arch242Emulator: # CPU
         self.RegFile['IOA'] = self.RegFile['IOA'] | 0b1000 if pyxel.btn(pyxel.KEY_RIGHT) else self.RegFile['IOA'] & 0b0111
 
         # print(self.RegFile['IOA'])
-
+_XD = []
 def main():
+    with open("snake.asm") as file:
+        for line in file.readlines():
+            _XD.append(line.strip())
+
+    
     cpu = Arch242Emulator()
     Pyxel(cpu)
 

@@ -108,7 +108,7 @@ class EmulatorInstructions:
         elif self.cpu.instr.dec == 0b00001111: # 16. dec*-mdc
             self._writeL4(self.cpu.RDRC, self._readL4(self.cpu.RDRC) - 1)
         
-        self._PCNext(self.cpu.instr.is_branch)
+        self.cpu.PC += 1
 
         return 
 
@@ -156,7 +156,7 @@ class EmulatorInstructions:
             memOrAcc = self.cpu.RegFile['ACC'] | self._readL4(self.cpu.RBRA)
             self.cpu.DataMem.mem[self.cpu.RBRA] = memOrAcc
         
-        self._PCNext(self.cpu.instr.is_branch)
+        self.cpu.PC += 1
 
         return
     
@@ -185,7 +185,7 @@ class EmulatorInstructions:
             self.cpu.PC = upperTemp | lowerPC
             self.cpu.TEMP = 0
 
-        self._PCNext(self.cpu.instr.is_branch)
+        self.cpu.PC += 1
 
     def _type4(self):
             
@@ -211,7 +211,7 @@ class EmulatorInstructions:
             self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] - 1
 
                     
-        self._PCNext(self.cpu.instr.is_branch)
+        self.cpu.PC += 1
 
         return 
 
@@ -219,7 +219,8 @@ class EmulatorInstructions:
     def _type5(self):
         self.cpu.IMM = self.cpu.instr.dec & emu_u.HEX_16L4
         op = (self.cpu.instr.dec & emu_u.HEX_16U8) >> emu_u.INSTR_8 # get the logical op
-        key_op = asm_u.to_bin(op, emu_u.INSTR_8)
+        key_op = format(int(op) & ((1 << emu_u.INSTR_8) - 1), f"0{emu_u.INSTR_8}b")
+
         match (dasm.to_operation[key_op]):
             case "add": # 49 add <self.cpu.IMM>	
                 self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] + self.cpu.IMM
@@ -236,7 +237,7 @@ class EmulatorInstructions:
             case "r4": # 55 r4 <self.cpu.IMM>
                 self.cpu.RegFile['RE'] = self.cpu.IMM
                 
-        self._PCNext(self.cpu.instr.is_branch)
+        self.cpu.PC += 1
 
         return 
 
@@ -270,80 +271,79 @@ class EmulatorInstructions:
     def _type8(self):
         self.cpu.IMM = self.cpu.instr.dec & emu_u.HEX_8L4 # 67. acc <self.cpu.IMM>	
         self.cpu.RegFile['ACC'] = self.cpu.IMM
-        print("nigger")
         self.cpu.PC += 1
 
         return 
 
     # instructions 68 b-bit <k> <self.cpu.IMM>
     def _type9(self):
-        k = int(self.cpu.instr.bin[4:6], 2)        # Bits 4–5: K (bit selector)
-        b = int(self.cpu.instr.bin[6:8], 2)        # Bits 6–7: B
+        k = int(self.cpu.instr.bin[3:5], 2)        # Bits 4–5: K (bit selector)
+        b = int(self.cpu.instr.bin[5:8], 2)        # Bits 6–7: B
         a = int(self.cpu.instr.bin[8:], 2)         # Bits 8–15: A
-        self.cpu.IMM = (b << 8) | a                         # 11-bit immediate: BBBAAAAAAAA
+        self.cpu.IMM = ((b << 8) | a) << 5         # 11-bit immediate: BBBAAAAAAAA
 
         acc = self.cpu.RegFile["ACC"]            # Get ACC value
 
         if ((acc >> k) & 1) == 1:
             # Check if bit K of ACC is 1
-            upperPC = self.cpu.PC & emu_u.HEX_16U5        # Keep upper 5 bits of PC
-            self.cpu.PC = upperPC | self.cpu.IMM            # Replace lower 11 bits with self.cpu.IMM
+            lowerPC = self.cpu.PC & emu_u.HEX_16L5        # Keep lower 5 bits
+            self.cpu.PC = lowerPC | self.cpu.IMM            # Replace lower 11 bits with self.cpu.IMM
         else:
             self.cpu.PC += 1          # Skip to next instruction
         
-        self._PCNext(self.cpu.instr.is_branch)
 
     # instructions 69 - 70
     def _type10(self):
         b = int(self.cpu.instr.bin[5:8], 2)
         a = int(self.cpu.instr.bin[8:], 2)    
-        self.cpu.IMM = (b << 8) | (a)
+        self.cpu.IMM = ((b << 8) | a) << 5
         print(self.cpu.IMM)
         tag = self.cpu.instr.bin[4]
 
         if (tag == '0' and self.cpu.RegFile['RA'] != 0):  # 69. bnz-a <self.cpu.IMM>
-            upperPC = self.cpu.PC & emu_u.HEX_16U5
-            self.cpu.PC = upperPC | self.cpu.IMM
+            lowerPC = self.cpu.PC & emu_u.HEX_16L5
+            self.cpu.PC = lowerPC | self.cpu.IMM
         elif (tag == '1' and self.cpu.RegFile['RB'] != 0): # 70. bnz-b <self.cpu.IMM>
-            upperPC = self.cpu.PC & emu_u.HEX_16U5
-            self.cpu.PC = upperPC | self.cpu.IMM
-
-        self._PCNext(self.cpu.instr.is_branch)
+            lowerPC = self.cpu.PC & emu_u.HEX_16L5
+            self.cpu.PC = lowerPC | self.cpu.IMM
+        else:
+            self.cpu.PC += 1
         # return   
 
     # instructions 71 - 72
     def _type11(self):
         b = int(self.cpu.instr.bin[5:8], 2)
         a = int(self.cpu.instr.bin[8:], 2)    
-        self.cpu.IMM = (b << 8) | (a)
+        self.cpu.IMM = ((b << 8) | a) << 5
         tag = self.cpu.instr.bin[4]
 
         if (tag == '0' and self.cpu.RegFile['ACC'] == 0): # 71. beqz <self.cpu.IMM>
-            upperPC = self.cpu.PC & emu_u.HEX_16U5
-            self.cpu.PC = upperPC | self.cpu.IMM
+            lowerPC = self.cpu.PC & emu_u.HEX_16U5
+            self.cpu.PC = lowerPC | self.cpu.IMM
         elif (tag == '1' and self.cpu.RegFile['ACC'] != 0): # 72. bnez <self.cpu.IMM>
-            upperPC = self.cpu.PC & emu_u.HEX_16U5
-            self.cpu.PC = upperPC | self.cpu.IMM
-
-        self._PCNext(self.cpu.instr.is_branch)
-
+            lowerPC = self.cpu.PC & emu_u.HEX_16U5
+            self.cpu.PC = lowerPC | self.cpu.IMM
+        else:
+            self.cpu.PC += 1
+            
         return 
 
     # instructions 73 - 74
     def _type12(self):
         b = int(self.cpu.instr.bin[5:8], 2)
         a = int(self.cpu.instr.bin[8:], 2)    
-        self.cpu.IMM = (b << 8) | (a)
+        self.cpu.IMM = ((b << 8) | a) << 5
         tag = self.cpu.instr.bin[4]
 
         if (self.cpu.RegFile['CF'] == 0 and tag == '0'): # 73. beqz-cf <self.cpu.IMM>
-            upperPC = self.cpu.PC & emu_u.HEX_16U5
-            self.cpu.PC = upperPC | self.cpu.IMM
+            lowerPC = self.cpu.PC & emu_u.HEX_16U5
+            self.cpu.PC = lowerPC | self.cpu.IMM
         elif (self.cpu.RegFile['CF'] != 0 and tag == '1'): # 74. bnez-cf <self.cpu.IMM>
-            upperPC = self.cpu.PC & emu_u.HEX_16U5
-            self.cpu.PC = upperPC | self.cpu.IMM
+            lowerPC = self.cpu.PC & emu_u.HEX_16U5
+            self.cpu.PC = lowerPC | self.cpu.IMM
+        else:
+            self.cpu.PC += 1
         
-        self._PCNext(self.cpu.instr.is_branch)
 
         return 
 
@@ -351,34 +351,38 @@ class EmulatorInstructions:
     def _type13(self):
         b = int(self.cpu.instr.bin[5:8], 2)
         a = int(self.cpu.instr.bin[8:], 2)    
-        self.cpu.IMM = (b << 8) | (a)
+        self.cpu.IMM = ((b << 8) | a) << 5
         tag = self.cpu.instr.bin[4]
 
         if (self.cpu.RegFile['RD'] != 0 and tag == '1'): # 76. bnz-d <self.cpu.IMM>
-            upperPC = self.cpu.PC & emu_u.HEX_16U5
-            self.cpu.PC = upperPC | self.cpu.IMM
+            lowerPC = self.cpu.PC & emu_u.HEX_16L5
+            self.cpu.PC = lowerPC | self.cpu.IMM
+        else:
+            self.cpu.PC += 1
         
-        self._PCNext(self.cpu.instr.is_branch)
 
         return 
 
     # instructions 77  -> 77. b <imm>
     def _type14(self):
-        upperPC = self.cpu.PC & emu_u.HEX_16U4               # Upper 4 bits of PC
-        self.cpu.IMM = int(asm_u.to_strbin(self.cpu.instr.bin[4:]), 2)  # 12-bit immediate from instr
-        self.cpu.PC = upperPC | self.cpu.IMM               # Merge upper 4 bits of PC with 12-bit imm
+        # upperPC = self.cpu.PC & emu_u.HEX_16U4         
+        # self.cpu.IMM = int(asm_u.to_strbin(self.cpu.instr.bin[4:]), 2)  
+        # self.cpu.PC = upperPC | self.cpu.IMM  
+        lowerPC = self.cpu.PC & emu_u.HEX_16L4
+        self.cpu.IMM = int(asm_u.to_strbin(self.cpu.instr.bin[4:]), 2) # immediate decimal
+        self.cpu.PC = (self.cpu.IMM << 4) | lowerPC
 
 
     # instructions 78 -> 78. call <imm> 
     def _type15(self): 
+        # self.cpu.TEMP = self.cpu.PC + 2
+        # upper_pc = self.cpu.PC & 0xF000
+        # imm_12bit = int(self.cpu.instr.bin[4:], 2)  
+        # self.cpu.PC = upper_pc | imm_12bit
+        
         self.cpu.TEMP = self.cpu.PC + 2
-            # Retain upper 4 bits of PC
-        upper_pc = self.cpu.PC & 0xF000
-
-        # Extract 12-bit immediate
-        imm_12bit = int(self.cpu.instr.bin[4:], 2)  # bits 4–15
-
-        # Set new PC with upper 4 bits from PC, lower 12 bits from immediate
-        self.cpu.PC = upper_pc | imm_12bit
+        lowerPC = self.cpu.PC & emu_u.HEX_16L4
+        self.cpu.IMM = int(asm_u.to_strbin(self.cpu.instr.bin[4:]), 2)
+        self.cpu.PC = self.cpu.IMM << 4 | lowerPC
 
         return 

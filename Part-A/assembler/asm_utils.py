@@ -7,11 +7,7 @@ def fix_width(value, width, pad_char='0'):
 
 def to_bin(value, bits):
     """Convert integer or numeric string to binary string of given bits"""
-    try:
-        num = int(value)
-    except ValueError:
-        num = 0
-    return format(num & ((1 << bits) - 1), f'0{bits}b')
+    return format(value & ((1 << bits) - 1), f"0{bits}b")
 
 def to_strbin(num: str):
     """Convert to binary string for easy conversion"""

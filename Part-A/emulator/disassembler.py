@@ -34,8 +34,14 @@ instr_imm_arg = [
     "add", "sub", "and", "xor", "or",
     "r4", "rarb", "rcrd", "acc",
     "b-bit", "bnz-a", "bnz-b", "beqz", "bnez",
-    "beqz-cf", "bnez-cf", "bnz-d", "b", "call"
+    "beqz-cf", "bnez-cf",
+    "bnz-d", "b", "call"
 ]
+instr_branch_imm = ["bnz-a", "bnz-b", "beqz", "bnez",
+    "beqz-cf", "bnez-cf",
+    "bnz-d", "b", "call", "b-bit"]
+instr_reg_imm = ["rarb", "rcrd", "acc", "r4"]
+
 instr_reg_arg = [
     "inc*-reg",     # Increment REG[RRR]
     "dec*-reg",     # Decrement REG[RRR]

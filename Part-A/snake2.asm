@@ -1,6 +1,2 @@
-rarb 193
-acc 1 
-acc 1
-acc 1
-acc 1
-nop
+01000110 
+00001111
