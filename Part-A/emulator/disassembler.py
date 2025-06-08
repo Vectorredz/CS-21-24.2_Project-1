@@ -1,9 +1,5 @@
 from typing import Callable
-from pathlib import Path
-from sys import argv
-from assembler import asm_utils as asm_u
-
-BASE_DIR = Path(__file__).resolve().parent.parent
+from shared import utils
 
 type InstEncoder = Callable
 
@@ -29,20 +25,14 @@ instr_type: dict[str, str] = {
     "1110": "Type14",
     "1111": "Type15"
 }
-instr_16_bit: list[str] = ["Type5", "Type6", "Type7", "Type9",  "Type10", "Type11", "Type12", "Type13", "Type14", "Type15"]
-instr_imm_arg = [
-    "add", "sub", "and", "xor", "or",
-    "r4", "rarb", "rcrd", "acc",
-    "b-bit", "bnz-a", "bnz-b", "beqz", "bnez",
-    "beqz-cf", "bnez-cf",
-    "bnz-d", "b", "call"
-]
-instr_branch_imm = ["bnz-a", "bnz-b", "beqz", "bnez",
+instr_16_bit_type: list[str] = ["Type5", "Type6", "Type7", "Type9",  "Type10", "Type11", "Type12", "Type13", "Type14", "Type15"]
+
+instr_branch_imm: list[str] = ["bnz-a", "bnz-b", "beqz", "bnez",
     "beqz-cf", "bnez-cf",
     "bnz-d", "b", "call", "b-bit"]
-instr_reg_imm = ["rarb", "rcrd", "acc", "r4"]
+instr_reg_imm: list[str] = ["rarb", "rcrd", "acc", "r4"]
 
-instr_reg_arg = [
+instr_reg_arg: list[str] = [
     "inc*-reg",     # Increment REG[RRR]
     "dec*-reg",     # Decrement REG[RRR]
     "to-reg",       # ACC → REG[RRR]
@@ -78,7 +68,7 @@ instr_no_arg: list[str] = [
     "from-ioa",    # 00110010
     "inc",         # 00110001
     "bcd",         # 00110110
-    "shutdown",    # 00110111 00111110 (still no arg; it's a 2-byte fixed opcode)
+    "shutdown",    # 00110111 
     "nop",         # 00111110
     "dec",         # 00111111
 ]
@@ -87,7 +77,7 @@ instr_no_arg: list[str] = [
 
 registers: dict[str, str] = {"000": "RA", "001": "RB", "010": "RC", "011" : "RD", "100": "RE"}
 bin_registers: list[int] = [0b000, 0b001, 0b010, 0b011, 0b100]
-concat_reg: dict[str, str] = {"0101" : "rarb","0110" : "rcrd"}
+concat_reg: dict[str, str] = {"0101" : "rarb", "0110" : "rcrd"}
 opcodes: list[str] = ["0001", "0010"]
 branches: list[str, str] = {
     "bnz-a" : "10100",
@@ -117,7 +107,7 @@ immediates_11: list[int] = [f"{i:011b}" for i in range(2**11)]
 immediates_12: list[int] = [f"{i:012b}" for i in range(2**12)]
 immediates_k: list[int] = [f"{i:02b}" for i in range(2**2)]
 
-# - Decorators
+# --- Decorators
 
 def dasm(code: str):
     def _dasm(f: Callable):
@@ -190,9 +180,9 @@ def localizer(binary, opcode, op, reg):
     @dasm(binary)
     def _(): 
         if opcode == "0001":
-            return f"inc*-reg {int(asm_u.to_strbin(reg), 2)}" if op == 0 else f"dec*-reg {int(asm_u.to_strbin(reg), 2)}"
+            return f"inc*-reg {int(utils.to_strbin(reg), 2)}" if op == 0 else f"dec*-reg {int(utils.to_strbin(reg), 2)}"
         elif opcode == "0010":
-            return f"to-reg {int(asm_u.to_strbin(reg), 2)}" if op == 0 else f"from-reg {int(asm_u.to_strbin(reg), 2)}"
+            return f"to-reg {int(utils.to_strbin(reg), 2)}" if op == 0 else f"from-reg {int(utils.to_strbin(reg), 2)}"
 
 for opcode in opcodes:
     for op in range(2):
@@ -257,7 +247,7 @@ def _(): return "dec"
 def localizer(binary, ar, imm):
     @dasm(binary)
     def _(): 
-        return f"{ar} {int(asm_u.to_strbin(imm), 2)}"
+        return f"{ar} {int(utils.to_strbin(imm), 2)}"
         
 for ar in from_operation.keys():
     for imm in immediates_4:
@@ -272,9 +262,9 @@ def localizer(binary,imm, ar):
     @dasm(binary)
     def _(): 
         if (ar == "0101"):
-            return f"rarb {int(asm_u.to_strbin(f"{imm}"), 2)}"
+            return f"rarb {int(utils.to_strbin(f"{imm}"), 2)}"
         elif (ar == "0110"):
-            return f"rcrd {int(asm_u.to_strbin(f"{imm}"), 2)}"
+            return f"rcrd {int(utils.to_strbin(f"{imm}"), 2)}"
 
 for ar in concat_reg.keys():
     for imm in immediates_8:
@@ -289,7 +279,7 @@ for ar in concat_reg.keys():
 def localizer(binary,imm):
     @dasm(binary)
     def _(): 
-        return f"acc {int(asm_u.to_strbin(imm), 2)}"
+        return f"acc {int(utils.to_strbin(imm), 2)}"
         
 for imm in immediates_4:
     binary = f"0111{imm}"
@@ -303,7 +293,7 @@ for imm in immediates_4:
 def localizer(binary, k, imm):
     @dasm(binary)
     def _(): 
-        return f"b-bit {int(asm_u.to_strbin(k), 2)}{int(asm_u.to_strbin(imm), 2)}"
+        return f"b-bit {int(utils.to_strbin(k), 2)}{int(utils.to_strbin(imm), 2)}"
         
 for k in immediates_k:
     for imm in immediates_11:
@@ -317,7 +307,7 @@ for k in immediates_k:
 def localizer(binary, branch, imm):
     @dasm(binary)
     def _(): 
-        return f"{branch} {int(asm_u.to_strbin(imm), 2)}"
+        return f"{branch} {int(utils.to_strbin(imm), 2)}"
         
 for branch in branches.keys():
     for imm in immediates_11:
@@ -332,9 +322,9 @@ def localizer(binary, branch, imm):
     @dasm(binary)
     def _(): 
         if (branch == 0):
-            return f"b {int(asm_u.to_strbin(imm), 2)}"
+            return f"b {int(utils.to_strbin(imm), 2)}"
         elif (branch == 1):
-            return f"call {int(asm_u.to_strbin(imm), 2)}"
+            return f"call {int(utils.to_strbin(imm), 2)}"
         
 for i in range(2):
     for imm in immediates_12:

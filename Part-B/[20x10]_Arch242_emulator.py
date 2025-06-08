@@ -1,7 +1,7 @@
 import emulator.disassembler as dasm
-from emulator import emu_utils as emu_u
+from emulator import utils as utils
 from emulator.emu_instructions import EmulatorInstructions
-from assembler import asm_utils as asm_u
+import shared.utils as utils
 from sys import argv
 from dataclasses import dataclass
 from pathlib import Path
@@ -35,20 +35,20 @@ class MatrixCell:
     state: int
 
 class DataMemory:
-    def __init__(self, size=2**emu_u.MEM_BITS):
+    def __init__(self, size=2**utils.MEM_BITS):
         self.Data: list[int] = []
         # --- a 1D array of data memory
 
 class InstrMemory:
-    def __init__(self, size=2**emu_u.INSTR_BITS):
+    def __init__(self, size=2**utils.INSTR_BITS):
         self.Instruction: list[int] = []
         # --- a 1D array of instruction memory
 
 class Pyxel:
     def __init__(self, emulator: "Arch242Emulator"):
         # --- Pyxel
-        self.screen_width = emu_u.SCREEN_WIDTH
-        self.screen_height = emu_u.SCREEN_HEIGHT
+        self.screen_width = utils.SCREEN_WIDTH
+        self.screen_height = utils.SCREEN_HEIGHT
         self.rows = 20
         self.cols = 10
         self.mem_addr = 192
@@ -92,62 +92,62 @@ class Pyxel:
         self._draw_cell()
       
     def _draw_cell(self):
-        pyxel.rect(0, 0, emu_u.GAME_WIDTH, emu_u.SCREEN_HEIGHT, 3)
+        pyxel.rect(0, 0, utils.GAME_WIDTH, utils.SCREEN_HEIGHT, 3)
         self._draw_hud()
-        matrix_width = self.cols * emu_u.DIM
-        matrix_height = self.rows * emu_u.DIM
+        matrix_width = self.cols * utils.DIM
+        matrix_height = self.rows * utils.DIM
         
-        offset_x = (emu_u.GAME_WIDTH - matrix_width) // 2
-        offset_y = (emu_u.SCREEN_HEIGHT - matrix_height) // 2
+        offset_x = (utils.GAME_WIDTH - matrix_width) // 2
+        offset_y = (utils.SCREEN_HEIGHT - matrix_height) // 2
         
         for row in range(self.rows):
             for col in range(self.cols):
-                x = offset_x + col * emu_u.DIM
-                y = offset_y + row * emu_u.DIM
+                x = offset_x + col * utils.DIM
+                y = offset_y + row * utils.DIM
                 print(x, y)
                 pyxel.blt(x,y,0,12,0,12,12)
-                # pyxel.rectb(x, y, emu_u.DIM, emu_u.DIM, 0)
+                # pyxel.rectb(x, y, utils.DIM, utils.DIM, 0)
                 # color = 11 if self.led_matrix[row][col].state == 1 else 6
-                # pyxel.rect(x, y, emu_u.DIM - 1, emu_u.DIM - 1, color)        
+                # pyxel.rect(x, y, utils.DIM - 1, utils.DIM - 1, color)        
         
     def _draw_title(self):
           # S
-        pyxel.blt(emu_u.GAME_WIDTH + 10, 10, 0, 0,24,16,16)
+        pyxel.blt(utils.GAME_WIDTH + 10, 10, 0, 0,24,16,16)
         # N
-        pyxel.blt(emu_u.GAME_WIDTH + 26, 10, 0, 16,24,16,16)
+        pyxel.blt(utils.GAME_WIDTH + 26, 10, 0, 16,24,16,16)
         # # A
-        pyxel.blt(emu_u.GAME_WIDTH + 41, 10, 0, 32,24,16,16)
+        pyxel.blt(utils.GAME_WIDTH + 41, 10, 0, 32,24,16,16)
         # # K
-        pyxel.blt(emu_u.GAME_WIDTH + 56, 10, 0, 48,24,16,16)
+        pyxel.blt(utils.GAME_WIDTH + 56, 10, 0, 48,24,16,16)
         # # E
-        pyxel.blt(emu_u.GAME_WIDTH + 72, 10, 0, 64,24,16,16)
+        pyxel.blt(utils.GAME_WIDTH + 72, 10, 0, 64,24,16,16)
         # # G
-        pyxel.blt(emu_u.GAME_WIDTH + 16, 26, 0, 0,40,16,16)
+        pyxel.blt(utils.GAME_WIDTH + 16, 26, 0, 0,40,16,16)
         # A
-        pyxel.blt(emu_u.GAME_WIDTH + 32, 26, 0, 16,40,16,16)
+        pyxel.blt(utils.GAME_WIDTH + 32, 26, 0, 16,40,16,16)
         # M
-        pyxel.blt(emu_u.GAME_WIDTH + 48, 26, 0, 32,40,16,16)
+        pyxel.blt(utils.GAME_WIDTH + 48, 26, 0, 32,40,16,16)
         # E
-        pyxel.blt(emu_u.GAME_WIDTH + 64, 26, 0, 48,40,16,16)
+        pyxel.blt(utils.GAME_WIDTH + 64, 26, 0, 48,40,16,16)
 
     def _draw_snake(self, x, y):
         pyxel.blt(5,5, 0,0,56,11,11, 0)
 
     def _center(self, text):
         text_width = len(text) * 4  
-        return emu_u.GAME_WIDTH + ((emu_u.SCREEN_WIDTH - emu_u.GAME_WIDTH) - text_width) // 2
+        return utils.GAME_WIDTH + ((utils.SCREEN_WIDTH - utils.GAME_WIDTH) - text_width) // 2
 
     def _draw_hud(self):
         
-        pyxel.rect(emu_u.GAME_WIDTH, 0, (emu_u.SCREEN_WIDTH - emu_u.GAME_WIDTH), emu_u.SCREEN_HEIGHT, 1) 
+        pyxel.rect(utils.GAME_WIDTH, 0, (utils.SCREEN_WIDTH - utils.GAME_WIDTH), utils.SCREEN_HEIGHT, 1) 
         self._draw_title()
-        pyxel.blt(emu_u.GAME_WIDTH + 22, 58, 0, 31,0,10,12,0)
+        pyxel.blt(utils.GAME_WIDTH + 22, 58, 0, 31,0,10,12,0)
         pyxel.text(self._center("SCORE:") - 5, 60, "SCORE:", 7)
         pyxel.text(self._center(f"{self.score}") + 10, 60, f"{self.score}", 7)
         pyxel.text(self._center("HOW TO PLAY"), 76, "HOW TO PLAY", 7)
         pyxel.text(self._center("press arrow keys"), 110, "Press arrow keys", 7)
         pyxel.text(self._center("to change direction"), 120, "to change direction", 7)
-        pyxel.blt(emu_u.GAME_WIDTH + 35, 86, 0, 10,57,40,20, 0)
+        pyxel.blt(utils.GAME_WIDTH + 35, 86, 0, 10,57,40,20, 0)
   
 
 class Arch242Emulator: # CPU
@@ -180,7 +180,7 @@ class Arch242Emulator: # CPU
     def load_instructions(self):
         # Run the assembler first 
 
-        with open(Path(emu_u.PATH), "r") as f:
+        with open(Path(utils.PATH), "r") as f:
             assembled = f.readlines()
 
         for line in assembled:
@@ -199,13 +199,13 @@ class Arch242Emulator: # CPU
 
         type = dasm.instr_type[opcode_bits]
 
-        if type in dasm.instr_16_bit or self.instr == "00110111": # shutdown
+        if type in dasm.instr_16_bit_type or self.instr == "00110111": # shutdown
             self.PC += 1
             self.instr += self.fetch() # 16 bit instruction
         else: 
             self.instr = self.instr
 
-        self.instr = Instructions(type, self.instr, int(asm_u.to_strbin(self.instr), 2))
+        self.instr = Instructions(type, self.instr, int(utils.to_strbin(self.instr), 2))
         
     def execute(self): # alu
         match (self.instr.opcode):

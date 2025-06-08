@@ -1,6 +1,6 @@
 from typing import Callable
-from assembler.asm_utils import fix_width, to_bin, is_label, get_label_name, to_strbin
-from assembler.asm_directives import label_map
+from shared.utils import fix_width, to_bin, is_label, get_label_name, to_strbin
+
 
 type InstEncoder = Callable
 type BranchImm = int
@@ -21,8 +21,6 @@ line = "dec*_reg 001"
 tokens = line.split(" ") # ["dec*_reg", "001"]
 instruction_map[tokens[0]](tokens[1:])
 '''
-
-
 
 @new_i("rot-r")
 def _(): return "00000000"
@@ -111,7 +109,6 @@ def _(reg):
 @new_i("from-reg")
 def _(reg):
     reg = to_bin(reg, 3)
-    print(reg)
     assert reg in ("000", "001", "010", "011", "100")
     return f"0010{reg}1"
 

@@ -1,31 +1,18 @@
 import emulator.disassembler as dasm
-from emulator import emu_utils as emu_u
 from emulator.emu_instructions import EmulatorInstructions
-from assembler import asm_utils as asm_u
+from shared import utils
 from sys import argv
 from dataclasses import dataclass
 from pathlib import Path
 import pyxel
-import subprocess
 
 BASE_DIR = Path(__file__).resolve().parent
 ASM_PATH = BASE_DIR / argv[1]
 
-
-"""
-TODO:
-    - Allows 2C or SignedM?
-"""
-
-@dataclass
-class EmulatorState:
-    shutdown: bool
-    start: bool
-
 @dataclass
 class Instructions:
 # --- Instruction class
-    opcode: str # first 4-bits 
+    opcode: str # last 4-bits 
     bin: str 
     dec: str
     is_branch: bool
@@ -40,19 +27,14 @@ class RegisterFile:
     def __init__(self):
         self.REG = {
             'RA': 0, 'RB': 0, 'RC': 0, 'RD': 0,
-            'RE': 0, 'RF': 0, 'ACC': 0, 'CF': 0, 
-            'IOA': 0
+            'RE': 0, 'RF': 0, 'ACC': 0, 'CF': 0, 'IOA': 0
         }
     def __getitem__(self, key):
         return self.REG[key]
 
     def __setitem__(self, key, value):
-        if key == 'CF':
-            self.REG[key] = value & 0x1  
-        else:
-            # assumes signed
-            self.REG[key] = value if (value < 0) else value & 0xF  
-
+        self.REG[key] = value 
+        
     def get(self, key, default=None):
         return self.REG.get(key, default)
 
@@ -60,13 +42,13 @@ class RegisterFile:
         return repr(self.REG)
 
 class DataMemory:
-    def __init__(self, size=2**emu_u.MEM_BITS):
+    def __init__(self, size=2**utils.MEM_BITS):
         self.mem: list[int] = [0x00] * size
         self.addr: int = 0x00 # 8-bit memory address
         # --- a 1D array of data memory
 
 class InstructionMemory:
-    def __init__(self, size=2**emu_u.INSTR_BITS):
+    def __init__(self, size=2**utils.INSTR_BITS):
         self.mem: list[int] = [0x000] * size
         self.addr: int = 0x0000 # 16-bit instruction address
         self.instr_16: bool = False
@@ -75,20 +57,18 @@ class InstructionMemory:
 class Pyxel:
     def __init__(self, emulator: "Arch242Emulator"):
         # --- Pyxel
-        self.screen_width = emu_u.SCREEN_WIDTH
-        self.screen_height = emu_u.SCREEN_HEIGHT
+        self.screen_width = utils.SCREEN_WIDTH
+        self.screen_height = utils.SCREEN_HEIGHT
+        self.mid = utils.SCREEN_WIDTH // 2
+
         self.rows = 10
         self.cols = 20
-        self.mid = emu_u.SCREEN_WIDTH // 2
         self.emulator = emulator
         self.score = 0 
         
-        self.mem_addr = 192 
-        self.i = 1
-        
+        # -- Initialize
         self._build_matrix()
-        # self.print_matrix()
-        pyxel.init(self.screen_width, self.screen_height, fps=60)
+        pyxel.init(self.screen_width, self.screen_height, fps=400)
         pyxel.load(str(Path("assets/snake.pyxres")))
         pyxel.run(self.update, self.draw)
 
@@ -105,34 +85,18 @@ class Pyxel:
                 else: 
                     k+=1
                     j=0
-        # print(self.led_matrix)
-
+                    
     def _write_cell(self):
         for mem_addr in range(192, 242):
             val = self.emulator.DataMem.mem[mem_addr]
             row = (mem_addr-192)//5
-            col_start = (mem_addr-192)%5
+            col_start = (mem_addr-192) % 5
             for i in range(4):
                 col = col_start*4 + i
                 state = val & 1 
                 self.led_matrix[row][col].state = state
                 val >>= 1
-  
 
-        # # for row in range(self.rows):
-        # #     for col in range(self.cols):
-        # #         cell = self.led_matrix[row][col]
-        # #         if (cell.memAddr == mem_addr) & (cell.mapbit == val):
-        # #             self.led_matrix[row][col].state = 1
-        # # 0b0101
-        # row = (mem_addr-192)//5
-        # col_start = (mem_addr-192)%5
-        # for i in range(4):
-        #     col = col_start*4 + i
-        #     if val & 1 == 1:
-        #         self.led_matrix[row][col].state = 1
-        #     val >>= 1
-                
     def print_matrix(self):
         for row in self.led_matrix:
             print("".join("1" if cell.state else "0" for cell in row))  
@@ -142,19 +106,17 @@ class Pyxel:
         self.emulator.clock_tick()
       
     def _draw_cell(self):
-        # pyxel.rect(0, 0, emu_u.GAME_HEIGHT, emu_u.SCREEN_HEIGHT, 3)
         self._draw_hud()
-        matrix_width = self.cols * emu_u.DIM
-        matrix_height = self.rows * emu_u.DIM
+        matrix_width = self.cols * utils.DIM
+        matrix_height = self.rows * utils.DIM
         
-        offset_x = (emu_u.SCREEN_WIDTH - matrix_width) // 2
-        offset_y = (emu_u.GAME_HEIGHT- matrix_height) // 2
+        offset_x = (utils.SCREEN_WIDTH - matrix_width) // 2
+        offset_y = (utils.GAME_HEIGHT- matrix_height) // 2
         
         for row in range(self.rows):
             for col in range(self.cols):
-                x = offset_x + col * emu_u.DIM
-                y = offset_y + row * emu_u.DIM
-                # print(x, y)
+                x = offset_x + col * utils.DIM
+                y = offset_y + row * utils.DIM
                 if (self.led_matrix[row][col].state == 1):
                     pyxel.blt(x,y,0,0,88,16,16)
                 else:
@@ -162,35 +124,35 @@ class Pyxel:
       
     def _draw_title(self):
            # S
-        pyxel.blt(self.mid - 72, 2, 0, 0,24,16,16)
+        pyxel.blt(self.mid - 72, 6, 0, 0,24,16,16)
         # # N
-        pyxel.blt(self.mid - 56, 2, 0, 16,24,16,16)
+        pyxel.blt(self.mid - 56, 6, 0, 16,24,16,16)
         # # # A
-        pyxel.blt(self.mid - 41, 2, 0, 32,24,16,16)
+        pyxel.blt(self.mid - 41, 6, 0, 32,24,16,16)
         # # # K
-        pyxel.blt(self.mid - 25, 2, 0, 48,24,16,16)
+        pyxel.blt(self.mid - 25, 6, 0, 48,24,16,16)
         # # # E
-        pyxel.blt(self.mid - 9, 2, 0, 64,24,16,16)
+        pyxel.blt(self.mid - 9, 6, 0, 64,24,16,16)
         # # # G
-        pyxel.blt(self.mid + 5, 2, 0, 0,40,16,16)
+        pyxel.blt(self.mid + 5, 6, 0, 0,40,16,16)
         # # A
-        pyxel.blt(self.mid + 21, 2, 0, 16,40,16,16)
+        pyxel.blt(self.mid + 21, 6, 0, 16,40,16,16)
         # # M
-        pyxel.blt(self.mid + 37, 2, 0, 32,40,16,16)
+        pyxel.blt(self.mid + 37, 6, 0, 32,40,16,16)
         # # E
-        pyxel.blt(self.mid + 53, 2, 0, 48,40,16,16)
+        pyxel.blt(self.mid + 53, 6, 0, 48,40,16,16)
 
     def _draw_snake(self, x, y):
         pass
 
     def _center(self, text):
         text_width = len(text) * 4  
-        return ((emu_u.SCREEN_WIDTH) - text_width) // 2
+        return ((utils.SCREEN_WIDTH) - text_width) // 2
 
     def _draw_benchmark(self):
         # Layout constants
-        left = emu_u.SCREEN_WIDTH - emu_u.SYS_WIDTH
-        top = emu_u.GAME_HEIGHT
+        left = utils.SCREEN_WIDTH - utils.SYS_WIDTH
+        top = utils.GAME_HEIGHT
         line_height = 8
         text_color = 7
         bg_color = 0
@@ -201,11 +163,11 @@ class Pyxel:
         content_right = bar_x + 70  # Enough for "|   REG: VALUE"
 
         panel_width = content_right - left + 10  # Slight margin to the right
-        panel_height = emu_u.SCREEN_HEIGHT - top + 20
+        panel_height = utils.SCREEN_HEIGHT - top + 20
 
         # Draw border and background fill
         pyxel.rectb(left, top - 20, panel_width - 25, panel_height, border_color)
-        pyxel.rect(left + 1, top - 19, panel_width - 40, panel_height - 2, bg_color)
+        pyxel.rect(left + 1, top - 19, panel_width - 20, panel_height - 2, bg_color)
 
         # Header
         pyxel.text(left + 10, top - 14, "Arch242 CPU Emulator", text_color)
@@ -215,8 +177,8 @@ class Pyxel:
         pyxel.text(left + 10, top, "INSTRUCTION:", text_color)
         
         if (self.emulator.instr):
-            pyxel.text(left + 90, top + line_height, f"{self.emulator.instr.bin}", text_color)
-            pyxel.text(left + 90, top, f"{dasm.instruction_map[self.emulator.instr.bin]()}", text_color)
+            pyxel.text(left + 85, top + line_height, f"{self.emulator.instr.bin}", text_color)
+            pyxel.text(left + 85, top, f"{dasm.instruction_map[self.emulator.instr.bin]()}", text_color)
         else:
             pyxel.text(left + 90, top, "no fetched", text_color)
       
@@ -230,38 +192,41 @@ class Pyxel:
 
         # Visual register marker
         for i in range(7):  # enough for RA–CF
-            pyxel.text(bar_x, top + i * line_height, "|", text_color)
+            pyxel.text(bar_x - 10, top + i * line_height, "|", text_color)
 
         # Register display beside the markers
         reg_labels = ["RA", "RB", "RC", "RD", "RE", "ACC", "CF"]
         for i, reg in enumerate(reg_labels):
             y = top + i * line_height
             value = self.emulator.RegFile.get(reg, 0)
-            pyxel.text(bar_x + 10, y, f"{reg}: {value:02d}", text_color)
+            pyxel.text(bar_x, y, f"{reg}: {value:02d}", text_color)
+            pyxel.text(bar_x + 30, y, f"{utils.to_bin(value, 4)}", text_color)
+        
 
     def _draw_hud(self):
         # Clear HUD area (keep original background)
-        pyxel.rect(-emu_u.SYS_WIDTH, emu_u.GAME_HEIGHT - 20, emu_u.SCREEN_WIDTH, emu_u.SCREEN_HEIGHT, 1)
+        pyxel.rect(-utils.SYS_WIDTH, utils.GAME_HEIGHT - 20, utils.SCREEN_WIDTH, utils.SCREEN_HEIGHT, 1)
 
         # --- LEFT: INSTRUCTIONS (unchanged) ---
-        pyxel.text(10, emu_u.GAME_HEIGHT - 14, "HOW TO PLAY", 7)
-        pyxel.blt(15, emu_u.GAME_HEIGHT - 5, 0, 10, 57, 40, 20, 0)
-        pyxel.text(15, emu_u.GAME_HEIGHT + 17, "Press arrow keys", 7)
-        pyxel.text(8, emu_u.GAME_HEIGHT + 25, "to change direction", 7)
+        pyxel.text(23, utils.GAME_HEIGHT - 9, "HOW TO PLAY", 7)
+        pyxel.blt(30, utils.GAME_HEIGHT + 10, 0, 10, 57, 40, 20, 0)
+        pyxel.text(15, utils.GAME_HEIGHT + 35, "Press arrow keys", 7)
+        pyxel.text(8, utils.GAME_HEIGHT + 45, "to change direction", 7)
 
-        center_left = emu_u.SCREEN_WIDTH // 3  # Shifted left from absolute center
+        center_left = utils.SCREEN_WIDTH // 3  # Shifted left from absolute center
 
         # Score (aligned with icons)
-        pyxel.blt(center_left - 20, emu_u.GAME_HEIGHT - 12, 0, 32, 88, 16, 16, 0)
-        pyxel.text(center_left, emu_u.GAME_HEIGHT - 6, "SCORE:", 7)
-
+        pyxel.blt(center_left - 35, utils.GAME_HEIGHT - 12, 0, 32, 88, 16, 16, 0)
+        pyxel.text(center_left - 15, utils.GAME_HEIGHT - 6, "SCORE:", 7)
+        pyxel.text(center_left + 15, utils.GAME_HEIGHT - 6, f"{self.emulator.DataMem.mem[254]}", 7)
+        
         # LED ON
-        pyxel.blt(center_left - 20, emu_u.GAME_HEIGHT + 12, 0, 0, 88, 16, 16, 0)
-        pyxel.text(center_left, emu_u.GAME_HEIGHT + 18, "LED ON:", 7)
+        pyxel.blt(center_left - 35, utils.GAME_HEIGHT + 12, 0, 0, 88, 16, 16, 0)
+        pyxel.text(center_left - 15, utils.GAME_HEIGHT + 18, "LED ON:", 7)
 
         # LED OFF
-        pyxel.blt(center_left - 20, emu_u.GAME_HEIGHT + 36, 0, 16, 88, 16, 16, 0)
-        pyxel.text(center_left, emu_u.GAME_HEIGHT + 40, "LED OFF:", 7)
+        pyxel.blt(center_left - 35, utils.GAME_HEIGHT + 36, 0, 16, 88, 16, 16, 0)
+        pyxel.text(center_left - 15, utils.GAME_HEIGHT + 40, "LED OFF:", 7)
         
     def draw(self):
         self._draw_cell()
@@ -284,29 +249,30 @@ class Arch242Emulator: # CPU
         # Init System
         self.clock_cycle: int = 0
         self.instr: str = " "
-        self.emuState = EmulatorState(False, False)
 
         # Instantiation
         self.emu_i = EmulatorInstructions(self)
         self.DataMem = DataMemory()
         self.InstMem = InstructionMemory()
+        
         self.load_instructions()
 
-
-        
     def clock_tick(self) -> None:
-        # self.load_instructions()
         self.instr: str = self.fetch()
-        # print(self.instr)
-        # self.iohardware()
+        self.iohardware()
         if (self.instr):
             self.decode()
             self.execute()
         self.clock_cycle += 1
+        x = (int(bin(self.DataMem.mem[6])[2:], 2) << 4) | int(bin(self.DataMem.mem[5])[2:], 2)
+        print("SNAKE-HEAD::", x, bin(self.DataMem.mem[7])[2:])
+        for (name, value) in self.RegFile.REG.items():
+            print(f"REG: {name} --> {bin(value)}")
+        x = (int(bin(self.DataMem.mem[243])[2:], 2) << 4) | int(bin(self.DataMem.mem[242])[2:], 2)
+        print("QUEUE-TAIL POINTER:", x)
         return
     
     def load_instructions(self) -> None:
-        # Run the assembler first 
         
         # first pass (.byte)
         with open(Path(ASM_PATH), "r") as f:
@@ -326,37 +292,34 @@ class Arch242Emulator: # CPU
 
         for line in assembled:
             line = line.strip()
-            if (emu_u.is_binary_string(line)): 
+            if (utils.is_binary_string(line)): 
                 self.InstMem.mem[self.InstMem.addr] = line
+                self.InstMem.addr += 1   
+            elif not (utils.is_binary_string(line)) and not (line.startswith(".byte")):
+                self.InstMem.mem[self.InstMem.addr] = utils.hex_to_bin(line)
                 self.InstMem.addr += 1
-            else:
-                continue        
-        #     # elif not (emu_u.is_binary_string(line)):
-        #     #     self.InstMem.mem[self.InstMem.addr] = asm_u.hex_to_bin(line)
-        #     #     self.InstMem.addr += 1
         return
         
     def fetch(self) -> str:
         if (self.InstMem.mem):
             instruction: str = self.InstMem.mem[self.PC]
             return instruction
+        
     def decode(self) -> None:
         
         opcode_bits = "100X" if self.instr[:4] == "1001" or self.instr[:4] == "1000" else self.instr[:4]
 
         type: str = dasm.instr_type[opcode_bits]
 
-        if type in dasm.instr_16_bit or self.instr == "00110111": # shutdown
-            self.PC += 1 
-            # self.InstMem.instr_16 = True
-            self.instr += self.fetch() # 16 bit instruction
+        if type in dasm.instr_16_bit_type or self.instr == "00110111": # shutdown
+            self.instr += self.InstMem.mem[self.PC + 1]
         else: 
             self.instr = self.instr # pc += 1
         
         token: str = dasm.instruction_map[self.instr]().split()[0]
 
         is_branch = True if token in dasm.jump_or_branch else False
-        self.instr: Instructions = Instructions(type, self.instr, int(asm_u.to_strbin(self.instr), 2), is_branch)
+        self.instr: Instructions = Instructions(type, self.instr, int(utils.to_strbin(self.instr), 2), is_branch)
         
     def execute(self) -> None: # alu
         match (self.instr.opcode):
@@ -399,7 +362,6 @@ class Arch242Emulator: # CPU
         self.RegFile['IOA'] = self.RegFile['IOA'] | 0b0100 if pyxel.btn(pyxel.KEY_LEFT) else self.RegFile['IOA'] & 0b1011
         self.RegFile['IOA'] = self.RegFile['IOA'] | 0b1000 if pyxel.btn(pyxel.KEY_RIGHT) else self.RegFile['IOA'] & 0b0111
 
-        # print(self.RegFile['IOA'])
 _XD = []
 def main():
     with open("snake.asm") as file:

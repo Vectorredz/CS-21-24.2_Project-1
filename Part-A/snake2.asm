@@ -1,2 +1,18 @@
-01000110 
-00001111
+TEST: nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+call TEST
+--!

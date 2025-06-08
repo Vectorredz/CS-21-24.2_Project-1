@@ -361,7 +361,7 @@ rarb 2
 --!
 xor-ba
 rarb 244
--!
+--!
 or*-mba
 rarb 6 -- upper nibble
 --!
@@ -379,7 +379,7 @@ rarb 4
 --!
 xor-ba
 rarb 244
--!
+--!
 or*-mba
 from-mba -- only copies lower nibble of this address, no need to worry about upper 0b1111 due to xor + or
 beqz ------------ BRANCH_TO: GAME_LOOP_food_ate
@@ -413,7 +413,9 @@ to-reg 1
 rcrd 10 -- get snake-tail MASK
 --!
 from-mdc
-and*-mba -- update snake-tail LED
+xor 0b1111 -- antimask
+--!
+and*-mba -- turn off snake-tail LED
 rarb 13 -- get queue-head dir and store to r4
 --!
 from-mba
@@ -559,7 +561,7 @@ to-reg 1
 rcrd 7 -- get snake-head MASK
 --!
 from-mdc
-and*-mba -- update snake-head LED
+or*-mba -- turn on snake-head LED
 rarb 255 -- finally, check food-ate and spawn new food if its 1
 --!
 from-mba
@@ -604,12 +606,12 @@ and*-mba -- set upper nibble upper two bits to 1 (since 192-241 are all 11XX)
 .byte 0x0a  ---- food address ID (lower nibble) = 218
 .byte 0x0d -- food address ID (upper nibble) = 218
 .byte 0x01  -- food address MASK = 0b0001
-.byte 0x00  ---- snake-tail address ID (lower nibble) = 192
-.byte 0x0c  -- snake-tail address ID (upper nibble) = 192
-.byte 0x01  -- snake-tail address MASK = 0b0001
 .byte 0x00  ---- snake-head address ID (lower nibble) = 192
 .byte 0x0c  -- snake-head address ID (upper nibble) = 192
 .byte 0x04  -- snake-head address MASK = 0b0100
+.byte 0x00  ---- snake-tail address ID (lower nibble) = 192
+.byte 0x0c  -- snake-tail address ID (upper nibble) = 192
+.byte 0x01  -- snake-tail address MASK = 0b0001
 .byte 0x0e  ---- queue-tail address (lower nibble)
 .byte 0x00  -- queue-tail address (upper nibble)
 .byte 0x04  ---- queue (0b1000 = right)

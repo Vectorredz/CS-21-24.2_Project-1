@@ -80,9 +80,9 @@ nop
 nop
 nop
 nop
+nop
+nop
 ret
-nop
-nop
 nop
 nop
 nop
@@ -112,9 +112,9 @@ nop
 nop
 nop
 nop
+nop
+nop
 ret
-nop
-nop
 nop
 nop
 nop
@@ -176,7 +176,39 @@ r4 0
 --!
 nop
 nop
+nop
+nop
 ret
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
 NEXT_CELL_left: from-reg 2 ------------ BRANCH: NEXT_CELL_left
 rarb 245 -- store initial pointer for possible use later
 --!
@@ -208,9 +240,9 @@ r4 0
 nop
 nop
 nop
+nop
+nop
 ret
-nop
-nop
 nop
 nop
 nop
@@ -272,9 +304,9 @@ bnez-cf NEXT_CELL_left_flow_dec ------------ BRANCH_TO: NEXT_CELL_left_flow_dec
 --!
 nop
 nop
+nop
+nop
 ret
-nop
-nop
 nop
 nop
 nop
@@ -320,9 +352,9 @@ nop
 nop
 nop
 nop
+nop
+nop
 ret
-nop
-nop
 nop
 nop
 nop
@@ -368,9 +400,9 @@ b-bit 0 NEXT_CELL_right_flow ------------ BRANCH_TO: NEXT_CELL_right_flow
 r4 0
 --!
 nop
+nop
+nop
 ret
-nop
-nop
 nop
 nop
 nop
@@ -448,9 +480,9 @@ nop
 nop
 nop
 nop
+nop
+nop
 ret -------------------- NEXT_CELL end
-nop
-nop
 nop
 nop
 nop
@@ -468,7 +500,7 @@ rarb 253 -- store new direction to 253 (get current val first if input is 0b0000
 bnez GAME_LOOP_input ------------ BRANCH_TO: GAME_LOOP_input
 --!
 from-mba
-b __GAME_LOOP_input_skip
+b __GAME_LOOP_input_skip1
 --!
 nop
 nop
@@ -484,7 +516,14 @@ nop
 nop
 nop
 nop
-__GAME_LOOP_input_skip: nop
+__GAME_LOOP_input_skip1: nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
 nop
 nop
 nop
@@ -494,6 +533,31 @@ GAME_LOOP_input: to-mba ------------ BRANCH: GAME_LOOP_input
 to-reg 4 -- setup call args
 rarb 5
 --!
+b __GAME_LOOP_input_skip2
+--!
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+__GAME_LOOP_input_skip2: nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
 nop
 nop
 call NEXT_CELL ------------ NEXT_CELL(input, &snake-head)
@@ -942,7 +1006,7 @@ rarb 2
 --!
 xor-ba
 rarb 244
--!
+--!
 or*-mba
 rarb 6 -- upper nibble
 --!
@@ -951,7 +1015,7 @@ rarb 3
 --!
 xor-ba
 rarb 244
--!
+--!
 or*-mba
 rarb 7 -- MASK
 --!
@@ -960,7 +1024,7 @@ rarb 4
 --!
 xor-ba
 rarb 244
--!
+--!
 or*-mba
 from-mba -- only copies lower nibble of this address, no need to worry about upper 0b1111 due to xor + or
 beqz GAME_LOOP_food_ate ------------ BRANCH_TO: GAME_LOOP_food_ate
@@ -1006,15 +1070,15 @@ to-reg 1
 rcrd 10 -- get snake-tail MASK
 --!
 from-mdc
-and*-mba -- update snake-tail LED
+xor 0b1111 -- antimask
+--!
+and*-mba -- turn off snake-tail LED
 rarb 13 -- get queue-head dir and store to r4
 --!
 from-mba
 to-reg 4
 rarb 8 -- set to snake-tail CELL pointer
 --!
-nop
-nop
 nop
 nop
 nop
@@ -1150,17 +1214,17 @@ to-mdc
 from-reg 0 -- get dir that was just changed and store to r4 for next iteration
 to-reg 4
 acc 1 -- set sub-mba arg to 1
-rarb 244
+rarb 242
 --!
 to-mba
-rarb 242 -- get lower nibble
---!
-from-mba
-rarb 244 -- subtract 1
---!
+from-reg 2 -- get lower nibble
 clr-cf
-sub-mba
+sub-mba -- subtract 1
 to-mba
+nop
+nop
+nop
+nop
 bnez-cf GAME_LOOP_food_miss_shift_dec ------------ BRANCH_TO: GAME_LOOP_food_miss_shift_dec
 --!
 b GAME_LOOP_food_miss_shift ------------ BRANCH_TO: GAME_LOOP_food_miss_shift
@@ -1219,17 +1283,6 @@ nop
 nop
 nop
 nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
 GAME_LOOP_food_ate: acc 1 ------------ BRANCH: GAME_LOOP_food_ate
 rarb 255 -- set food-ate to 1
 --!
@@ -1276,6 +1329,17 @@ nop
 __GAME_LOOP_food_ate_skip: nop
 nop
 nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
 GAME_LOOP_enqueue: rcrd 11 ------------ BRANCH: GAME_LOOP_enqueue
 --! -- get queue-tail address
 from-mdc
@@ -1299,11 +1363,27 @@ to-reg 1
 rcrd 7 -- get snake-head MASK
 --!
 from-mdc
-and*-mba -- update snake-head LED
+or*-mba -- turn on snake-head LED
 rarb 255 -- finally, check food-ate and spawn new food if its 1
 --!
 from-mba
+b __GAME_LOOP_enqueue_skip
+--!
 nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+__GAME_LOOP_enqueue_skip: nop
 nop
 nop
 nop
@@ -1314,22 +1394,6 @@ beqz GAME_LOOP ------------ BRANCH_TO: GAME_LOOP
 --!
 b GAME_LOOP_food_spawn ------------ BRANCH_TO: GAME_LOOP_food_spawn
 --!
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
 nop
 nop
 nop
@@ -1379,12 +1443,12 @@ and*-mba -- set upper nibble upper two bits to 1 (since 192-241 are all 11XX)
 .byte 0x0a  ---- food address ID (lower nibble) = 218
 .byte 0x0d -- food address ID (upper nibble) = 218
 .byte 0x01  -- food address MASK = 0b0001
-.byte 0x00  ---- snake-tail address ID (lower nibble) = 192
-.byte 0x0c  -- snake-tail address ID (upper nibble) = 192
-.byte 0x01  -- snake-tail address MASK = 0b0001
 .byte 0x00  ---- snake-head address ID (lower nibble) = 192
 .byte 0x0c  -- snake-head address ID (upper nibble) = 192
 .byte 0x04  -- snake-head address MASK = 0b0100
+.byte 0x00  ---- snake-tail address ID (lower nibble) = 192
+.byte 0x0c  -- snake-tail address ID (upper nibble) = 192
+.byte 0x01  -- snake-tail address MASK = 0b0001
 .byte 0x0e  ---- queue-tail address (lower nibble)
 .byte 0x00  -- queue-tail address (upper nibble)
 .byte 0x04  ---- queue (0b1000 = right)

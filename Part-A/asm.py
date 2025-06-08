@@ -1,25 +1,27 @@
-from pathlib import Path
 from sys import argv
 from assembler.asm_instructions import instruction_map
-from assembler.asm_directives import directive_map, label_map
-from assembler.asm_utils import to_bin, to_hex, to_strbin, hex_to_bin, get_label_name, is_label
-from emulator.disassembler import instr_no_arg, instr_imm_arg, instr_branch_imm, instr_reg_imm, instr_reg_arg
+from shared import utils
+from emulator.disassembler import instr_branch_imm
 
 INPUT_PATH = argv[1]
 OUTPUT_PATH = "out.asm"
+COMMENT = "--"
 
-comments = ["--", "-!", "--!", "------------", "------------------", "--------------------", "----------------------------------------"]
+# This setup takes care of cases where a branch instruction to a LABEL was read before the LABEL itself recorded its own address.
+label_address: dict[str, int] = {}
+pending_tokens: list[list[str]] = [] # list[tokens]
+pending_labels: dict[str, list[tuple[int, list, list[int]]]] = {} # pending_labels[LABEL] = [ (tokens, i, address) ]
 output_lines: list[str] = []
 
-def _not_comment(token: str) -> bool: return True if token not in comments else False
 
-def _encode_instructions(tokens: list[str]) -> None:
-    instr: str = tokens[0]
-    operands: list[str | int] = []
+def _record_tokens(tokens: list[str], address: int, label: str | None):
+    instr = tokens[0]
     
     # Normal instruction
     if instr not in instr_branch_imm:
-        for token in tokens[1:]:  # -- Only process operand positions first filter the garbages
+        for i in range(1, len(tokens)):  # -- Only process operand positions first filter the garbages
+            token = tokens[i]
+
             # Check for numeric values first
             op = token
             if op.isdigit():  # Decimal
@@ -28,100 +30,99 @@ def _encode_instructions(tokens: list[str]) -> None:
                 op = int(token[2:], 2)  # Convert to decimal
             elif op.startswith("0x"):  # Hex
                 op = int(token[2:], 16)  # Convert to decimal
-            operands.append(op)
+            tokens[i] = op
 
     else: # Branch instruction
         # All NUMERICAL operands are of the form (int, is_label_addr) for the function to use
-        for token in tokens[1:]:  # -- Only process operand positions first filter the garbages
+        for i in range(1, len(tokens)):  # -- Only process operand positions first filter the garbages
+            token = tokens[i]
+
             # Check for numeric values first
             op = token
             if op.isdigit():  # Decimal
-                op = (int(token), False)
+                tokens[i] = (int(token), False)
             elif op.startswith("0b"):  # Bin
-                op = (int(token[2:], 2), False)  # Convert to decimal
+                tokens[i] = (int(token[2:], 2), False)  # Convert to decimal
             elif op.startswith("0x"):  # Hex
-                op = (int(token[2:], 16), False)  # Convert to decimal
-            elif op in label_map:
-                op = (label_map[op], True) # Get address from label
-            operands.append(op)
+                tokens[i] = (int(token[2:], 16), False)  # Convert to decimal
+            else:
+                if op in label_address:
+                    tokens[i] = (label_address[op], True)
+                    if not ((label_address[op] & 0b1111 == address & 0b1111) or (label_address[op] & 0b11111 == address & 0b11111)):
+                        print("FAIL", address, tokens)
+
+                # (If it's not a real target label it's fine)
+                else:
+                    if op not in pending_labels: pending_labels[op] = []
+                    pending_labels[op].append((tokens, i, address)) # Modified later if the target label's line is finally read
     
+    # If this line itself has a label, then propagate changes to all of pending_labels[label]
+    if label is not None:
+        label_address[label] = address
+        if label in pending_labels:
+            while len(pending_labels[label]) > 0:
+                (other_tokens, i, other_address) = pending_labels[label].pop()
+                other_tokens[i] = (address, True)
+                if not ((label_address[label] & 0b1111 == other_address & 0b1111) or (label_address[label] & 0b11111 == other_address & 0b11111)):
+                    print("FAIL", other_address, other_tokens)
+    
+    pending_tokens.append(tokens)
+
+    
+
+def _encode_instruction(tokens: list[str]):
+    instr = tokens[0]
+    operands = tokens[1:]
     encoded = instruction_map[instr](*operands)
-    if len(encoded) == 16:
+    if instr in utils.instr_16_bit:
+        assert len(encoded) == 16
         output_lines.extend([encoded[:8], encoded[8:]])
     else:
+        assert len(encoded) == 8
         output_lines.append(encoded)
 
-
-current_address: int = 0x0000 # <---- PC
-with open(INPUT_PATH, "r") as input_file:
-    for line in input_file:
-        line: str = line.strip()
-        tokens = line.split()
-        
-        if not line:
-            continue              
-        # Remove comments
-        # if comment in line:
-        #     line = line.split("--")[0].strip()
-        
-        # if comment_1 in line:
-        #     continue
-        
-        # Create label
-        if is_label(line):
-            label_name = get_label_name(line)
-            label_map[label_name] = current_address
-            # print(line)
-            
-        # Create inline label
-        elif is_label(tokens[0]):
-            label_name = get_label_name(tokens[0])
-            label_map[label_name] = current_address
-            
-        # else:
-        #     current_address += 1 # <-- increment 
-        current_address += 1
-        
-# print(current_address, label_map['GAME_LOOP_food_miss_queue-tail_dec']) 
-# # Second pass - generate machine code
-
+# First pass: Record tokens
 current_address: int = 0x0000
 with open(INPUT_PATH, "r") as input_file:
     for line in input_file:
-        # First remove entire comment lines
+        _c = line.find(COMMENT)
+        if _c != -1: line = line[:_c]
         line = line.strip()
-        if not line or any(line.startswith(c) for c in comments):
-            continue
-            
-        # Remove inline comments
-        if '--' in line:
-            line = line.split('--')[0].strip()
-            if not line:  # Case where whole line was a comment
-                continue
-                
-        tokens = line.split()
+        if not line: continue
         
-        filtered_tokens = [t for t in tokens if _not_comment(t)]
-        if not filtered_tokens:
-            continue
-        
+        tokens = line.split(" ")
         if line.startswith(".byte"):
-            output_lines.append(line)
-            
+            pending_tokens.append(tokens)
         else:
+            
             # strip label
-            if is_label(tokens[0]):
+            label = None
+            if utils.is_label(tokens[0]):
+                label = utils.get_label_name(tokens[0])
                 tokens = tokens[1:]
-            _encode_instructions(tokens)
+            
+            instr = tokens[0]
+            _record_tokens(tokens, current_address, label)
+            current_address += 1 if instr not in utils.instr_16_bit else 2
+
+# Second pass: Encode instructions
+for tokens in pending_tokens:
+    if tokens[0] == ".byte":
+        output_lines.append(" ".join(tokens))
+    else:
+        _encode_instruction(tokens)
 
 
 bin_or_hex = argv[2]
 assert bin_or_hex in ("bin", "hex")
 
-if bin_or_hex == "hex":
-    output_lines = [to_hex(line) for line in output_lines]
+def _is_byte(line):
+    return False if (line.startswith(".byte")) else True
 
-# writes to destination ASM file
+if bin_or_hex == "hex":
+    output_lines = [(utils.to_hex(line))[2:] if (_is_byte(line)) else line for line in output_lines]
+
+# write to destination ASM file
 destination_file = open(OUTPUT_PATH, "w+")
 
 for line in output_lines:

@@ -9,11 +9,9 @@ sys.path.append(os.path.dirname(__file__))
 # Add parent directory to path (optional, if importing from parent)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import emu_utils as emu_u
-from assembler import asm_utils as asm_u
-from Arch242_emulator import Instructions, Arch242Emulator, DataMemory, InstructionMemory
+import shared.utils as utils
+from emu import Instructions, Arch242Emulator, DataMemory, InstructionMemory
 from emu_instructions import EmulatorInstructions
-
 
 @pytest.fixture
 def cpu(): return Arch242Emulator()
@@ -190,7 +188,7 @@ class TestType1Instructions:
         cpu.RegFile['CF'] = 0b0
         cpu.RegFile['RA'] = 0b0001
         cpu.RegFile['RB'] = 0b0010
-        cpu.RBRA = cpu.RegFile['RB'] << emu_u.INSTR_4 | cpu.RegFile['RA']
+        cpu.RBRA = cpu.RegFile['RB'] << utils.INSTR_4 | cpu.RegFile['RA']
         cpu.DataMem.mem[cpu.RBRA] = 33
         cpu.instr = cpu.fetch()
         cpu.decode()
@@ -204,7 +202,7 @@ class TestType1Instructions:
         cpu.RegFile['CF'] = 0b0
         cpu.RegFile['RC'] = 0b0001
         cpu.RegFile['RD'] = 0b0010
-        cpu.RDRC = cpu.RegFile['RD'] << emu_u.INSTR_4 | cpu.RegFile['RC']
+        cpu.RDRC = cpu.RegFile['RD'] << utils.INSTR_4 | cpu.RegFile['RC']
         cpu.DataMem.mem[cpu.RDRC] = 15
         cpu.instr = cpu.fetch()
         cpu.decode()
@@ -836,7 +834,7 @@ class TestType9Instructions:
         assert k == "10"
         assert b == "00"
         assert a == "00000101"
-        imm = (int(asm_u.to_strbin(b), 2) << 8) | int(asm_u.to_strbin(a), 2) # = 0x105
+        imm = (int(utils.to_strbin(b), 2) << 8) | int(utils.to_strbin(a), 2) # = 0x105
         expected_pc = ((cpu.PC - 2) & 0xF800) | imm
         assert cpu.PC == expected_pc, f"Expected PC = {hex(expected_pc)}, got {hex(cpu.PC)}"
 
@@ -988,13 +986,13 @@ class TestType14Instructions:
         # Instruction format: 1100 1 b a (16-bit)
         cpu.InstMem.mem[0] = "11101010"  # First byte
         cpu.InstMem.mem[1] = "01010000"  # Second byte (b=2, a=5)
-        imm = int(asm_u.to_strbin(cpu.InstMem.mem[0][4:] + cpu.InstMem.mem[1]),2)
+        imm = int(utils.to_strbin(cpu.InstMem.mem[0][4:] + cpu.InstMem.mem[1]),2)
 
         assert cpu.PC == 0
         cpu.instr = cpu.fetch()
         cpu.decode()
         assert cpu.PC == 1
-        lowerPC = cpu.PC & emu_u.HEX_16L4
+        lowerPC = cpu.PC & utils.HEX_16L4
         expected_cpu = imm << 4 | lowerPC
         cpu.execute()
         assert cpu.PC == expected_cpu
@@ -1007,13 +1005,13 @@ class TestType14Instructions:
         # Instruction format: 1100 1 b a (16-bit)
         cpu.InstMem.mem[0] = "11111010"  # First byte
         cpu.InstMem.mem[1] = "01010000"  # Second byte (b=2, a=5)
-        imm = int(asm_u.to_strbin(cpu.InstMem.mem[0][4:] + cpu.InstMem.mem[1]),2)
+        imm = int(utils.to_strbin(cpu.InstMem.mem[0][4:] + cpu.InstMem.mem[1]),2)
 
         assert cpu.PC == 0
         cpu.instr = cpu.fetch()
         cpu.decode()
         assert cpu.PC == 1
-        lowerPC = cpu.PC & emu_u.HEX_16L4
+        lowerPC = cpu.PC & utils.HEX_16L4
         expected_cpu = imm << 4 | lowerPC
         cpu.execute()
         assert 1 + 2 == cpu.TEMP
