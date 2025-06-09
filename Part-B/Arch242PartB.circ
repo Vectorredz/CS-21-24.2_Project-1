@@ -3841,10 +3841,7 @@
       <a name="addrWidth" val="16"/>
       <a name="appearance" val="classic"/>
       <a name="contents">addr/data: 16 8
-3e 2b 2a 77 40 3 41 1
-42 f 43 7 46 d 20 21
-a0 2c 8b 2c 1405*0 88 2c 24*0
-1d 1e 1f
+0
 </a>
     </comp>
     <comp lib="8" loc="(250,215)" name="Text">
