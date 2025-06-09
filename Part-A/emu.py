@@ -57,7 +57,7 @@ class InstructionMemory:
 class Pyxel:
     def __init__(self, emulator: "Arch242Emulator"):
         # --- Pyxel
-        self.screen_width = utils.SCREEN_WIDTH
+        self.screen_width: int = utils.SCREEN_WIDTH
         self.screen_height = utils.SCREEN_HEIGHT
         self.mid = utils.SCREEN_WIDTH // 2
 
@@ -85,7 +85,12 @@ class Pyxel:
                 else: 
                     k+=1
                     j=0
-                    
+    
+    # assumptions:
+    # matrix[row][col].state = 0 ---> led off
+    # matrix[row][col].state = 1 ---> led on (snake)
+    # matrix[row][col].state = 2 ---> food cell
+    
     def _write_cell(self):
         for mem_addr in range(192, 242):
             val = self.emulator.DataMem.mem[mem_addr]
@@ -96,6 +101,15 @@ class Pyxel:
                 state = val & 1 
                 self.led_matrix[row][col].state = state
                 val >>= 1
+                
+        # --- Food block from memory address 218
+        food_pos = self.emulator.DataMem.mem[218]
+        food_row = food_pos // 20
+        food_col = food_pos % 20
+        
+
+        self.led_matrix[food_row][food_col].state = 2
+        
 
     def print_matrix(self):
         for row in self.led_matrix:
@@ -118,9 +132,11 @@ class Pyxel:
                 x = offset_x + col * utils.DIM
                 y = offset_y + row * utils.DIM
                 if (self.led_matrix[row][col].state == 1):
-                    pyxel.blt(x,y,0,0,88,16,16)
+                    pyxel.blt(x,y,0,0,88,16,16) # <--- LED ON
+                elif (self.led_matrix[row][col].state == 2):
+                    pyxel.blt(x,y,0,32,88,16,16) # <--- Food block spawn
                 else:
-                    pyxel.blt(x,y,0,16,88,16,16)
+                    pyxel.blt(x,y,0,16,88,16,16) # < --- LED OFF
       
     def _draw_title(self):
            # S
@@ -141,9 +157,6 @@ class Pyxel:
         pyxel.blt(self.mid + 37, 6, 0, 32,40,16,16)
         # # E
         pyxel.blt(self.mid + 53, 6, 0, 48,40,16,16)
-
-    def _draw_snake(self, x, y):
-        pass
 
     def _center(self, text):
         text_width = len(text) * 4  
@@ -202,7 +215,6 @@ class Pyxel:
             pyxel.text(bar_x, y, f"{reg}: {value:02d}", text_color)
             pyxel.text(bar_x + 30, y, f"{utils.to_bin(value, 4)}", text_color)
         
-
     def _draw_hud(self):
         # Clear HUD area (keep original background)
         pyxel.rect(-utils.SYS_WIDTH, utils.GAME_HEIGHT - 20, utils.SCREEN_WIDTH, utils.SCREEN_HEIGHT, 1)
@@ -289,15 +301,22 @@ class Arch242Emulator: # CPU
         # second pass (instructions)
         with open(Path(ASM_PATH), "r") as f:
             assembled = f.readlines()
-
+        
+        # asserts if conversion is correct
+        # for i in range(len(assembled)):
+        #     if (not assembled[i].strip().startswith(".byte") or not hex[i].strip().startswith(".byte")):
+        #         assert assembled[i].strip() == utils.to_bin(int(f"0x{hex[i].strip()}", 16), 8)
+        
+        byte_2: list[str] = ['00', '01','10', '11']
         for line in assembled:
             line = line.strip()
-            if (utils.is_binary_string(line)): 
+            if (utils.is_binary_string(line) and line not in byte_2): 
                 self.InstMem.mem[self.InstMem.addr] = line
                 self.InstMem.addr += 1   
-            elif not (utils.is_binary_string(line)) and not (line.startswith(".byte")):
-                self.InstMem.mem[self.InstMem.addr] = utils.hex_to_bin(line)
+            elif (line in byte_2 or not utils.is_binary_string(line)) and not (line.startswith(".byte")):
+                self.InstMem.mem[self.InstMem.addr] = utils.to_bin(int(f"0x{line}", 16), 8)
                 self.InstMem.addr += 1
+    
         return
         
     def fetch(self) -> str:

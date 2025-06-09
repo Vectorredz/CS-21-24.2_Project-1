@@ -22,6 +22,7 @@ def hex_to_bin(value):
     """Convert to hex string to binary literal for easy conversion"""
     return to_bin(int(f"0x{value}", 16), 8)
 
+
 def is_label(line):
     """Check if line is a label definition"""
     line = line.strip()

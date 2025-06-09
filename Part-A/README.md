@@ -2,46 +2,47 @@
 
 ## Preface
 
-The implementation is developed by the a group of 4, Glenn Paragas, Louise Gabriel Vilar, Luis Antonio Sarmiento, and Ethan Renell Mislang
+The implementation is developed by a group of 4 CS-21 students, namely, **Glenn Paragas, Louise Gabriel Vilar, Luis Antonio Sarmiento,** and **Ethan Renell Mislang.**
 
 The specifications can be found in this [Mkdocs Page](https://cs21.upd-dcs.work/labs/project/#arch-242-architecture-overview)
 
 ## Contributions
 
-### Part A
+### Part A: Arch-242 assembler + emulator + Snake Game
 
 #### Part A1
-- Paragas, Glenn 
-- Mislang, Ethan Renell 
-- Vilar, Louise Gabriel
+- PARAGAS, Glenn 
+- MISLANG, Ethan Renell 
+- VILAR, Louise Gabriel
 
 #### Part A2
-- Paragas, Glenn
-- Vilar, Louise Gabriel
+- PARAGAS, Glenn
+- VILAR, Louise Gabriel
 
 #### Part A3
-- Paragas, Glenn
-- Vilar, Louise Gabriel
+- PARAGAS, Glenn
+- VILAR, Louise Gabriel
 
-### Part B
-- Sarmiento, Luis Antonio
-- Mislang, Ethan Renell 
+### Part B: Logisim-based Arch-242 implementation
+- SARMIENTO, Luis Antonio
+- MISLANG, Ethan Renell 
+
 
 ## Instruction A1
 
-# Arch-242 Assembler Guide
+### Arch-242 Assembler Guide
 
-Welcome to the **Arch-242 Instruction Set Architecture**! This guide walks you through how to use the assembler in coding an Arch-242 assembly program
+Welcome to the **Arch-242 Instruction Set Architecture**! This guide walks you through how to use the assembler in coding an Arch-242 assembly program.
 
-## Dependencies of the Assembler
+### Dependencies of the Assembler
 
 The assembler directory contains the following utilities for the assembler:
 
-- "__init__.py"
-- "asm_instructions.py"
-- "blabes.py"
+- `__init__.py` – Initializes the assembler package
+- `asm_instructions.py` - Contains the decorators for assembling each arch-242 instructions
+- `blabes.py` 
 
-## How to Run
+### How to Run
 
 ```
 python assembler.py <my_program.asm> <bin or hex>
@@ -52,16 +53,16 @@ python assembler.py <my_program.asm> <bin or hex>
 3. Choose between `bin` or `hex` as the second argument in the command line
 4. If `bin` was selected the corresponding assembled program should be presented as lines of binary strings w/out `0b`
 5. If `hex` was selected the corresponding assembled program should be presented as lines of hexadecimal strings w/out `0x`
-6. Locate the output file dedicated for the assembled program it should be found in the same directory and is named as **"Arch242_output.asm"**.
+6. Locate the output file dedicated for the assembled program it should be found in the same directory and is named as `Arch242_output.asm`.
 
 
 ## Instruction A2
 
-# Arch-242 Emulator Guide
+### Arch-242 Emulator Guide
 
 Welcome to the **Arch-242 Instruction Set Architecture**! This guide walks you through how to use the emulator in coding an Arch-242 assembly program
 
-## Dependencies of the Assembler
+### Dependencies of the Assembler
 
 The assembler directory contains the following utilities for the assembler:
 
@@ -70,7 +71,7 @@ The assembler directory contains the following utilities for the assembler:
 - "emu_instructions.py"
 - "test_emulator.py"
 
-## How to Run
+### How to Run
 
 In order to run the correct assembled program using the emulator we must use the assembler first ---> read the "Instruction_A1.md" for steps
 
@@ -87,7 +88,7 @@ Now, with the `"Arch242_output.asm"` file at hand, we will now run the emulator 
 ```
 python emulator.py Arch242_output.asm
 ```
-## Navigating Through The Arch242 Emulator Pyxel Window
+### Navigating Through The Arch242 Emulator Pyxel Window
 
 Once the command ran succesfully a `Pyxel` window will abruptly shows up in the screen. The `Pyxel` window represents the Snake Game.\
 
@@ -96,7 +97,7 @@ Snake Game is a pyxel-based snake game that is encoded using the custom Arch 242
 - **Benchmark:** Displays the current status of the Arch242 CPU Emulator. It includes: current fetched instruction (in bin and assembly), program counter `(PC)` and register values `(RA, RB, RC, RD, RE, ACC, CF, TEMP)` at the current cycle.  
 - **Game Grid:** Displays an LED matrix of 10 rows x 20 columns. This actually displays the `snake` the `player` will play as.
   
-## Gameplay
+### Gameplay
 
 The game starts with the snake of length `3` moving to the right, the player can use the keys `W`, `A`, `S`, `D` to change the direction of the snake. 
 

@@ -68,8 +68,6 @@ def _record_tokens(tokens: list[str], address: int, label: str | None):
     
     pending_tokens.append(tokens)
 
-    
-
 def _encode_instruction(tokens: list[str]):
     instr = tokens[0]
     operands = tokens[1:]
