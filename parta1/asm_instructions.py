@@ -1,5 +1,7 @@
+from sys import path as sys_path
+sys_path.append("..")
 from typing import Callable
-from shared.utils import fix_width, to_bin, is_label, get_label_name, to_strbin
+from shared import utils
 
 
 type InstEncoder = Callable
@@ -72,13 +74,13 @@ def _(): return "00001111"
 
 @new_i("inc*-reg")
 def _(reg):
-    reg = to_bin(reg, 3)
+    reg = utils.to_bin(reg, 3)
     assert reg in ("000", "001", "010", "011", "100")
     return f"0001{reg}0"
 
 @new_i("dec*-reg")
 def _(reg):
-    reg = to_bin(reg, 3)
+    reg = utils.to_bin(reg, 3)
     assert reg in ("000", "001", "010", "011", "100")
     return f"0001{reg}1"
 
@@ -102,13 +104,13 @@ def _(): return "00011111"
 
 @new_i("to-reg")
 def _(reg):
-    reg = to_bin(reg, 3)
+    reg = utils.to_bin(reg, 3)
     assert reg in ("000", "001", "010", "011", "100")
     return f"0010{reg}0"
 
 @new_i("from-reg")
 def _(reg):
-    reg = to_bin(reg, 3)
+    reg = utils.to_bin(reg, 3)
     assert reg in ("000", "001", "010", "011", "100")
     return f"0010{reg}1"
 
@@ -177,39 +179,39 @@ def _(): return "00111111"
 
 @new_i("add")
 def _(imm):
-    return f"010000000000{to_bin(imm, 4)}"
+    return f"010000000000{utils.to_bin(imm, 4)}"
 
 @new_i("sub")
 def _(imm):
-    return f"010000010000{to_bin(imm, 4)}"
+    return f"010000010000{utils.to_bin(imm, 4)}"
 
 @new_i("and")
 def _(imm):
-    return f"010000100000{to_bin(imm, 4)}"
+    return f"010000100000{utils.to_bin(imm, 4)}"
 
 @new_i("xor")
 def _(imm):
-    return f"010000110000{to_bin(imm, 4)}"
+    return f"010000110000{utils.to_bin(imm, 4)}"
 
 @new_i("or")
 def _(imm):
-    return f"010001000000{to_bin(imm, 4)}"
+    return f"010001000000{utils.to_bin(imm, 4)}"
 
 @new_i("r4")
 def _(imm):
-    return f"010001100000{to_bin(imm, 4)}"
+    return f"010001100000{utils.to_bin(imm, 4)}"
 
 
 @new_i("rarb")
 def _(imm):
-    imm = to_bin(imm, 8)
+    imm = utils.to_bin(imm, 8)
     YYYY = imm[:4]
     XXXX = imm[4:]
     return f"0101{XXXX}0000{YYYY}"
 
 @new_i("rcrd")
 def _(imm):
-    imm = to_bin(imm, 8)
+    imm = utils.to_bin(imm, 8)
     YYYY = imm[:4]
     XXXX = imm[4:]
     return f"0110{XXXX}0000{YYYY}"
@@ -217,7 +219,7 @@ def _(imm):
 # ======================================================
 
 @new_i("acc")
-def _(imm): return f"0111{to_bin(imm, 4)}"
+def _(imm): return f"0111{utils.to_bin(imm, 4)}"
 
 # Branches
 # assume:
@@ -229,14 +231,14 @@ def _(_k, _value):
     k, _ = _k
     value, is_label_addr = _value
     if (is_label_addr):
-        return f"100{to_bin(k, 2)}{to_bin(value >> 5, 11)}"
+        return f"100{utils.to_bin(k, 2)}{utils.to_bin(value >> 5, 11)}"
     else:
-        return f"100{to_bin(k, 2)}{to_bin(value, 11)}"
+        return f"100{utils.to_bin(k, 2)}{utils.to_bin(value, 11)}"
 
 # Helper function for branch instructions
 def encode_branch(opcode: str, address: int, retain_bits: int, accepted_bits: int) -> str:
     imm = int(address) >> retain_bits
-    return f"{opcode}{to_bin(imm, accepted_bits)}"
+    return f"{opcode}{utils.to_bin(imm, accepted_bits)}"
 
 # Branch instructions
 @new_i("bnz-a")
@@ -245,7 +247,7 @@ def _(_value):
     if (is_label_addr):
         return encode_branch("10100", value, 5, 11)
     else:
-        return f"10100{to_bin(value, 11)}"
+        return f"10100{utils.to_bin(value, 11)}"
         
 
 @new_i("bnz-b")
@@ -254,7 +256,7 @@ def _(_value):
     if (is_label_addr):
         return encode_branch("10101", value, 5, 11)
     else:
-        return f"10101{to_bin(value, 11)}"
+        return f"10101{utils.to_bin(value, 11)}"
 
 @new_i("beqz")
 def _(_value):
@@ -262,7 +264,7 @@ def _(_value):
     if (is_label_addr):
         return encode_branch("10110", value, 5, 11)
     else:
-        return f"10110{to_bin(value, 11)}"
+        return f"10110{utils.to_bin(value, 11)}"
 
 @new_i("bnez")
 def _(_value):
@@ -270,7 +272,7 @@ def _(_value):
     if (is_label_addr):
         return encode_branch("10111", value, 5, 11)
     else:
-        return f"10111{to_bin(value, 11)}"
+        return f"10111{utils.to_bin(value, 11)}"
 
 @new_i("beqz-cf")
 def _(_value):
@@ -278,7 +280,7 @@ def _(_value):
     if (is_label_addr):
         return encode_branch("11000", value, 5, 11)
     else:
-        return f"11000{to_bin(value, 11)}"
+        return f"11000{utils.to_bin(value, 11)}"
 
 @new_i("bnez-cf")
 def _(_value):
@@ -286,7 +288,7 @@ def _(_value):
     if (is_label_addr):
         return encode_branch("11001", value, 5, 11)
     else:
-        return f"11001{to_bin(value, 11)}"
+        return f"11001{utils.to_bin(value, 11)}"
 
 
 @new_i("bnz-d")
@@ -295,7 +297,7 @@ def _(_value):
     if (is_label_addr):
         return encode_branch("11011", value, 5, 11)
     else:
-        return f"11011{to_bin(value, 11)}"
+        return f"11011{utils.to_bin(value, 11)}"
 
 @new_i("b")
 def _(_value):
@@ -303,7 +305,7 @@ def _(_value):
     if (is_label_addr):
         return encode_branch("1110", value, 4, 12)
     else:
-        return f"1110{to_bin(value, 12)}"
+        return f"1110{utils.to_bin(value, 12)}"
 
 @new_i("call")
 def _(_value):
@@ -311,4 +313,4 @@ def _(_value):
     if (is_label_addr):
         return encode_branch("1111", value, 4, 12)
     else:
-        return f"1111{to_bin(value, 12)}"
+        return f"1111{utils.to_bin(value, 12)}"

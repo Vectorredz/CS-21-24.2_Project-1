@@ -1,5 +1,7 @@
 from __future__ import annotations
-import emulator.disassembler as dasm
+from sys import path as sys_path
+sys_path.append("..")
+import disassembler as dasm
 from shared import utils
 
 class EmulatorInstructions:
@@ -16,8 +18,6 @@ class EmulatorInstructions:
         return result < 0
     
     def _readL4(self, addr: int) -> int:
-        print(f"Reading memory at address: {addr}")
-        # if 
         return int(self.cpu.DataMem.mem[addr]) & 0xF
 
     def _writeL4(self, addr: int, val: int) -> None:
@@ -75,7 +75,6 @@ class EmulatorInstructions:
         
         elif self.cpu.instr.dec == 0b00000100: # 5. from-mba
             self.cpu.RegFile['ACC'] = self._readL4(self.cpu.RBRA)
-            # print(self.cpu.RBRA)
         
         elif self.cpu.instr.dec == 0b00000101: # 6. to-mba
             self._writeL4(self.cpu.RBRA, self.cpu.RegFile['ACC'])
@@ -88,22 +87,22 @@ class EmulatorInstructions:
 
         elif self.cpu.instr.dec == 0b00001000: # 9. addc-mba
             result = self.cpu.RegFile['ACC'] + self._readL4(self.cpu.RBRA) + self.cpu.RegFile['CF']
-            self.cpu.RegFile['ACC'] = result % 15
+            self.cpu.RegFile['ACC'] = result % 16
             self.cpu.RegFile['CF'] = self._overflow(result)
 
         elif self.cpu.instr.dec == 0b00001001: # 10. add-mba
             result = self.cpu.RegFile['ACC'] + self._readL4(self.cpu.RBRA)
-            self.cpu.RegFile['ACC'] = result % 15
+            self.cpu.RegFile['ACC'] = result % 16
             self.cpu.RegFile['CF'] = self._overflow(result)
 
         elif self.cpu.instr.dec == 0b00001010: # 11. subc-mba
             result = self.cpu.RegFile['ACC'] - self._readL4(self.cpu.RBRA) + self.cpu.RegFile['CF']
-            self.cpu.RegFile['ACC'] = result % 15
+            self.cpu.RegFile['ACC'] = result % 16
             self.cpu.RegFile['CF'] = self._underflow(result)
 
         elif self.cpu.instr.dec == 0b00001011: # 12. sub-mba
             result = self.cpu.RegFile['ACC'] - self._readL4(self.cpu.RBRA)
-            self.cpu.RegFile['ACC'] = result % 15
+            self.cpu.RegFile['ACC'] = result % 16
             self.cpu.RegFile['CF'] = self._underflow(result)
 
         elif self.cpu.instr.dec == 0b00001100: # 13. inc*-mba
@@ -190,15 +189,10 @@ class EmulatorInstructions:
             self.cpu.RegFile['CF'] = 1
 
         elif self.cpu.instr.dec == 0b00101110: # 31. ret
-            temp = self.cpu.TEMP
-
             upperTemp = self.cpu.TEMP & utils.HEX_16U12 
             lowerPC = self.cpu.PC & utils.HEX_16L4 
             self.cpu.PC = (upperTemp) | lowerPC
             self.cpu.TEMP = 0
-
-            print(self.cpu.PC, temp)
-            assert self.cpu.PC == temp
 
         if self.cpu.instr.dec != 0b00101110: # not 31. ret
             self.cpu.PC += 1
@@ -239,9 +233,9 @@ class EmulatorInstructions:
 
         match (dasm.to_operation[key_op]):
             case "add": # 49 add <self.cpu.IMM>	
-                self.cpu.RegFile['ACC'] = (self.cpu.RegFile['ACC'] + self.cpu.IMM) % 15
+                self.cpu.RegFile['ACC'] = (self.cpu.RegFile['ACC'] + self.cpu.IMM) % 16
             case "sub": # 50 sub <self.cpu.IMM>
-                self.cpu.RegFile['ACC'] = (self.cpu.RegFile['ACC'] - self.cpu.IMM) % 15
+                self.cpu.RegFile['ACC'] = (self.cpu.RegFile['ACC'] - self.cpu.IMM) % 16
             case "and": # 51 and s<self.cpu.IMM>
                 self.cpu.RegFile['ACC'] = self.cpu.RegFile['ACC'] & self.cpu.IMM
             case "xor": # 52 xor <self.cpu.IMM>

@@ -1,5 +1,7 @@
-import emulator.disassembler as dasm
-from emulator.emu_instructions import EmulatorInstructions
+from sys import path as sys_path
+sys_path.append("..")
+import disassembler as dasm
+from emu_instructions import EmulatorInstructions
 from shared import utils
 from sys import argv
 from dataclasses import dataclass
@@ -221,8 +223,6 @@ class Pyxel:
         pyxel.text(left + 10, top + 2 *  line_height, "PROGRAM COUNTER:", text_color)
         pyxel.text(left + 110, top + 2 * line_height, f"{self.emulator.PC}", text_color)
         
-        print(f"{self.emulator.PC}:: {_XD[self.emulator.PC]}")
-        
         pyxel.text(left + 10, top + 3 * line_height, "LINE:", text_color)
         # pyxel.text(left + 110, top + 2 * line_height, f"{self.emulator.RBRA}", text_color)
 
@@ -299,12 +299,6 @@ class Arch242Emulator: # CPU
             self.decode()
             self.execute()
         self.clock_cycle += 1
-        x = (int(bin(self.DataMem.mem[6])[2:], 2) << 4) | int(bin(self.DataMem.mem[5])[2:], 2)
-        print("SNAKE-HEAD::", x, bin(self.DataMem.mem[7])[2:])
-        for (name, value) in self.RegFile.REG.items():
-            print(f"REG: {name} --> {bin(value)}")
-        x = (int(bin(self.DataMem.mem[243])[2:], 2) << 4) | int(bin(self.DataMem.mem[242])[2:], 2)
-        print("QUEUE-TAIL POINTER:", x)
         return
     
     def load_instructions(self) -> None:
@@ -404,13 +398,7 @@ class Arch242Emulator: # CPU
         self.RegFile['IOA'] = self.RegFile['IOA'] | 0b0100 if pyxel.btn(pyxel.KEY_LEFT) else self.RegFile['IOA'] & 0b1011
         self.RegFile['IOA'] = self.RegFile['IOA'] | 0b1000 if pyxel.btn(pyxel.KEY_RIGHT) else self.RegFile['IOA'] & 0b0111
 
-_XD = []
 def main():
-    with open("snake.asm") as file:
-        for line in file.readlines():
-            _XD.append(line.strip())
-
-    
     cpu = Arch242Emulator()
     Pyxel(cpu)
 

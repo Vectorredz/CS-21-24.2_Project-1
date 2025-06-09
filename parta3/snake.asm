@@ -20,8 +20,8 @@ b-bit 1 NEXT_CELL_down ------------ BRANCH_TO: NEXT_CELL_down
 b-bit 2 NEXT_CELL_left ------------ BRANCH_TO: NEXT_CELL_left
 --!
 b-bit 3 NEXT_CELL_right ------------ BRANCH_TO: NEXT_CELL_right
---!
-nop -- this should be unreachable
+--! -- this should be unreachable
+nop
 nop
 nop
 nop
@@ -470,7 +470,7 @@ from-mdc
 to-reg 1
 addc-mba -- add any possible underflows
 to-mba
-r4 1
+r4 2
 --!
 nop
 nop
@@ -562,34 +562,31 @@ nop
 nop
 call NEXT_CELL ------------ NEXT_CELL(input, &snake-head)
 --!
-from-reg 4
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-beqz GAME_LOOP_oob_row ------------ BRANCH_TO: GAME_LOOP_oob_row
+from-reg 4 -- if r4 == 1: check left oob
+xor 1
+--! -- check oob: spam xor and OR operations on MEM[244]
+bnez GAME_LOOP_oob_col_right ------------ BRANCH_TO: GAME_LOOP_oob_right
 --!
-rarb 6 -- compare column borders if oob
+acc 0 ------------------ reset
+rarb 244
 --!
-acc 0b1100 -- 192, 197, 202, 207
+to-mba
+acc 0b1100 ---- CHECK: 196
+rarb 6
+--!
 xor-ba
-bnez GAME_LOOP_oob_col_1101 ------------ BRANCH_TO: GAME_LOOP_oob_col_1101
+rarb 244
 --!
+or*-mba
+acc 0b0100
 rarb 5
 --!
-acc 0b0000 -- 1100 + (lower nibble)
 xor-ba
-b __GAME_LOOP_oob_col_1100_skip1
+rarb 244
+--!
+or*-mba
+from-mba
+b __GAME_LOOP_oob_col_left_skip1
 --!
 nop
 nop
@@ -605,27 +602,30 @@ nop
 nop
 nop
 nop
-__GAME_LOOP_oob_col_1100_skip1: beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
+__GAME_LOOP_oob_col_left_skip1: nop
+nop
+nop
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-acc 0b0101 -- 1100 + (lower nibble)
+acc 0 ------------------ reset
+to-mba
+acc 0b1100 ---- CHECK: 201
+rarb 6
+--!
 xor-ba
-b __GAME_LOOP_oob_col_1100_skip2
+rarb 244
 --!
+or*-mba
+acc 0b1001
+rarb 5
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
 nop
 nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-__GAME_LOOP_oob_col_1100_skip2: nop
 nop
 nop
 nop
@@ -639,25 +639,25 @@ nop
 nop
 beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-acc 0b1010 -- 1100 + (lower nibble)
-xor-ba
-b __GAME_LOOP_oob_col_1100_skip3
+acc 0 ------------------ reset
+to-mba
+acc 0b1100 ---- CHECK: 206
+rarb 6
 --!
+xor-ba
+rarb 244
+--!
+or*-mba
+acc 0b1110
+rarb 5
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
 nop
 nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-__GAME_LOOP_oob_col_1100_skip3: nop
 nop
 nop
 nop
@@ -671,25 +671,25 @@ nop
 nop
 beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-acc 0b1111 -- 1100 + (lower nibble)
-xor-ba
-b __GAME_LOOP_oob_col_1100_skip4
+acc 0 ------------------ reset
+to-mba
+acc 0b1101 ---- CHECK: 211
+rarb 6
 --!
+xor-ba
+rarb 244
+--!
+or*-mba
+acc 0b0011
+rarb 5
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
 nop
 nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-__GAME_LOOP_oob_col_1100_skip4: nop
 nop
 nop
 nop
@@ -703,6 +703,189 @@ nop
 nop
 beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
+acc 0 ------------------ reset
+to-mba
+acc 0b1101 ---- CHECK: 216
+rarb 6
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+acc 0b1000
+rarb 5
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
+--!
+acc 0 ------------------ reset
+to-mba
+acc 0b1101 ---- CHECK: 221
+rarb 6
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+acc 0b1101
+rarb 5
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
+--!
+acc 0 ------------------ reset
+to-mba
+acc 0b1110 ---- CHECK: 226
+rarb 6
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+acc 0b0010
+rarb 5
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
+--!
+acc 0 ------------------ reset
+to-mba
+acc 0b1110 ---- CHECK: 231
+rarb 6
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+acc 0b0111
+rarb 5
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
+--!
+acc 0 ------------------ reset
+to-mba
+acc 0b1110 ---- CHECK: 236
+rarb 6
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+acc 0b1100
+rarb 5
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
+--! -- skip 241 check since not needed
+b __GAME_LOOP_oob_col_left_skip2
+--!
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+__GAME_LOOP_oob_col_left_skip2: nop
+nop
+nop
+nop
+nop
+nop
+nop
 nop
 nop
 b GAME_LOOP_oob_row ------------ BRANCH_TO: GAME_LOOP_oob_row
@@ -711,135 +894,54 @@ nop
 nop
 nop
 nop
-GAME_LOOP_oob_col_1101: acc 0b1101 -- 212, 217, 222 ------------ BRANCH: GAME_LOOP_oob_col_1101
-xor-ba
-bnez GAME_LOOP_oob_col_1110 ------------ BRANCH_TO: GAME_LOOP_oob_col_1110
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+GAME_LOOP_oob_col_right: from-reg 4 -- if r4 == 2: check right oob
+xor 2
 --!
-rarb 5
---!
-acc 0b0100 -- 1101 + (lower nibble)
-xor-ba
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
---!
-acc 0b1001 -- 1101 + (lower nibble)
-xor-ba
-b __GAME_LOOP_oob_col_1101_skip1
---!
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-__GAME_LOOP_oob_col_1101_skip1: nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
---!
-acc 0b1110 -- 1101 + (lower nibble)
-xor-ba
-b __GAME_LOOP_oob_col_1101_skip2
---!
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-__GAME_LOOP_oob_col_1101_skip2: nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
---!
-nop
-nop
-b GAME_LOOP_oob_row ------------ BRANCH_TO: GAME_LOOP_oob_row
---!
-nop
-nop
-nop
-nop
-nop
-nop
-GAME_LOOP_oob_col_1110: acc 0b1110 -- 227. 232, 237 ------------ BRANCH: GAME_LOOP_oob_col_1110
-xor-ba
-b __GAME_LOOP_oob_col_1110_skip1
---!
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-__GAME_LOOP_oob_col_1110_skip1: nop
-nop
-nop
-nop
-nop
-nop
 bnez GAME_LOOP_oob_row ------------ BRANCH_TO: GAME_LOOP_oob_row
+--! -- skip 192 check since not needed
+acc 0 ------------------ reset
+rarb 244
 --!
+to-mba
+acc 0b1100
+rarb 6 ---- CHECK: 197
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+acc 0b0101
 rarb 5
 --!
-acc 0b0011 -- 1110 + (lower nibble)
 xor-ba
-b __GAME_LOOP_oob_col_1110_skip2
+rarb 244
+--!
+or*-mba
+from-mba
+b __GAME_LOOP_oob_col_right_skip1
 --!
 nop
 nop
@@ -855,33 +957,27 @@ nop
 nop
 nop
 nop
-__GAME_LOOP_oob_col_1110_skip2: nop
-nop
-nop
-nop
-nop
-nop
-beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
+__GAME_LOOP_oob_col_right_skip1: beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-acc 0b1000 -- 1110 + (lower nibble)
+acc 0 ------------------ reset
+to-mba
+acc 0b1100 ---- CHECK: 202
+rarb 6
+--!
 xor-ba
-b __GAME_LOOP_oob_col_1110_skip3
+rarb 244
 --!
+or*-mba
+acc 0b1010
+rarb 5
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
 nop
 nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-__GAME_LOOP_oob_col_1110_skip3: nop
 nop
 nop
 nop
@@ -895,25 +991,25 @@ nop
 nop
 beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
-acc 0b1101 -- 1110 + (lower nibble)
-xor-ba
-b __GAME_LOOP_oob_col_1110_skip4
+acc 0 ------------------ reset
+to-mba
+acc 0b1100 ---- CHECK: 207
+rarb 6
 --!
+xor-ba
+rarb 244
+--!
+or*-mba
+acc 0b1111
+rarb 5
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
 nop
 nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-__GAME_LOOP_oob_col_1110_skip4: nop
 nop
 nop
 nop
@@ -927,6 +1023,221 @@ nop
 nop
 beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
+acc 0 ------------------ reset
+to-mba
+acc 0b1101 ---- CHECK: 212
+rarb 6
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+acc 0b0100
+rarb 5
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
+--!
+acc 0 ------------------ reset
+to-mba
+acc 0b1101 ---- CHECK: 217
+rarb 6
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+acc 0b1001
+rarb 5
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
+--!
+acc 0 ------------------ reset
+to-mba
+acc 0b1101 ---- CHECK: 222
+rarb 6
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+acc 0b1110
+rarb 5
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
+--!
+acc 0 ------------------ reset
+to-mba
+acc 0b1110 ---- CHECK: 227
+rarb 6
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+acc 0b0011
+rarb 5
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
+--!
+acc 0 ------------------ reset
+to-mba
+acc 0b1110 ---- CHECK: 232
+rarb 6
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+acc 0b1000
+rarb 5
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
+--!
+acc 0 ------------------ reset
+to-mba
+acc 0b1110 ---- CHECK: 237
+rarb 6
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+acc 0b1101
+rarb 5
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+beqz GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
+--!
+b __GAME_LOOP_oob_col_right_skip2
+--!
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+__GAME_LOOP_oob_col_right_skip2: nop
+nop
+nop
+nop
+nop
+nop
+nop
 nop
 nop
 GAME_LOOP_oob_row: acc 0b1100 ------------ BRANCH: GAME_LOOP_oob_row
@@ -957,6 +1268,15 @@ nop
 nop
 nop
 __GAME_LOOP_oob_row_skip: nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
 bnez-cf GAME_DEATH ------------ BRANCH_TO: GAME_DEATH
 --!
 acc 0b1111 -- check if upper nibble is 1111
@@ -1410,24 +1730,372 @@ GAME_DEATH: shutdown ------------ BRANCH: GAME_DEATH
 nop
 GAME_LOOP_food_spawn: rarb 253 ------------ BRANCH: GAME_LOOP_food_spawn
 --! -- spawn new food (final operation yay!!! >_<)
-from-mba -- get new dir again
-rarb 250 -- add to RNG
+from-mba -- dir
+rarb 2 -- add to RNG
 --!
 add-mba
 to-mba
-rarb 252 -- add to RNG
+rarb 3 -- add to RNG
 --!
 add-mba
 to-mba
-rarb 251 -- add to RNG
+rarb 4 -- add to RNG
 --!
 add-mba
 to-mba
+rarb 254 -- score
+--!
+from-mba
+rarb 2 -- add to RNG
+--!
+add-mba
+to-mba
+rarb 3 -- add to RNG
+--!
+add-mba
+to-mba
+rarb 4 -- add to RNG
+--!
+add-mba
+add-mba
+add-mba
+to-mba
+rarb 5 -- snake-head (lower nibble)
+--!
+from-mba
+rarb 2 -- add to RNG
+--!
+add-mba
+to-mba
+rarb 3 -- add to RNG
+--!
+add-mba
+to-mba
+rarb 4 -- add to RNG
+--!
+add-mba
+add-mba
+add-mba
+to-mba
+rarb 6 -- snake-head (upper nibble)
+--!
+from-mba
+rarb 2 -- add to RNG
+--!
+add-mba
+to-mba
+rarb 3 -- add to RNG
+--!
+add-mba
+to-mba
+rarb 4 -- add to RNG
+--!
+add-mba
+add-mba
+add-mba
+to-mba
+rarb 7 -- snake-head (mask)
+--!
+from-mba
+rarb 2 -- add to RNG
+--!
+add-mba
+to-mba
+rarb 3 -- add to RNG
+--!
+add-mba
+to-mba
+rarb 4 -- add to RNG
+--!
+add-mba
+add-mba
+add-mba
+to-mba
+and 0b11 -- set MASK to 1-4
+--!
+beqz GAME_LOOP_food_spawn_mask_1 ------------ BRANCH_TO: GAME_LOOP_food_spawn_mask_1
+--!
+acc 0b1
+to-mba
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+b GAME_LOOP_food_spawn_upper ------------ BRANCH_TO: GAME_LOOP_food_spawn_upper
+--!
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+GAME_LOOP_food_spawn_mask_1: dec ------------ BRANCH: GAME_LOOP_food_spawn_mask_1
+beqz GAME_LOOP_food_spawn_mask_2 ------------ BRANCH_TO: GAME_LOOP_food_spawn_mask_2
+--!
+acc 0b10
+to-mba
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+b GAME_LOOP_food_spawn_upper ------------ BRANCH_TO: GAME_LOOP_food_spawn_upper
+--!
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+GAME_LOOP_food_spawn_mask_2: dec ------------ BRANCH: GAME_LOOP_food_spawn_mask_2
+beqz GAME_LOOP_food_spawn_mask_3 ------------ BRANCH_TO: GAME_LOOP_food_spawn_mask_3
+--!
+acc 0b100
+to-mba
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+b GAME_LOOP_food_spawn_upper ------------ BRANCH_TO: GAME_LOOP_food_spawn_upper
+--!
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+GAME_LOOP_food_spawn_mask_3: dec ------------ BRANCH: GAME_LOOP_food_spawn_mask_1
+beqz GAME_LOOP_food_spawn_upper ------------ BRANCH_TO: GAME_LOOP_food_spawn_upper
+--!
+acc 0b1000
+to-mba
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+GAME_LOOP_food_spawn_upper: rarb 3 ------------ BRANCH: GAME_LOOP_food_spawn_upper
+--! -- set upper nibble upper two bits to 1 (since 192-241 are all 11XX)
 acc 0b1100
-and*-mba -- set upper nibble upper two bits to 1 (since 192-241 are all 11XX)
-
-
-
+or*-mba
+acc 0b1111 -- if upper is 0b1111 then dont allow lower nibble > 0b0001
+xor-ba
+bnez GAME_LOOP_food_spawn_shift ------------ BRANCH_TO: GAME_LOOP_food_spawn_shift
+--!
+rarb 2 -- cancel upper 3 bits of lower nibble
+--!
+acc 0b0001
+and*-mba
+b __GAME_LOOP_food_spawn_upper_skip
+--!
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+__GAME_LOOP_food_spawn_upper_skip: nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+GAME_LOOP_food_spawn_shift: rcrd 2 ------------ BRANCH: GAME_LOOP_food_spawn_shift
+--! -- get food ID
+from-mdc
+to-reg 0
+rcrd 3
+--!
+from-mdc
+to-reg 1
+rcrd 4 -- get mask
+--!
+from-mdc
+and-ba -- check if occupied
+bnez GAME_LOOP_food_spawn_shift_cont ------------ BRANCH_TO: GAME_LOOP_food_spawn_shift
+--!
+nop
+nop
+b GAME_LOOP ------------ BRANCH_TO: GAME_LOOP
+--!
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+GAME_LOOP_food_spawn_shift_cont: r4 0b1000 ------------ BRANCH: GAME_LOOP_food_spawn_shift_cont
+--!
+rarb 2
+--!
+nop
+nop
+call NEXT_CELL -- NEXT_CELL(right, &food)
+--!
+acc 0 -- reset 244 first
+rarb 244
+--!
+to-mba
+acc 0b1111 -- possible wrap (>241)
+rarb 3
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+acc 0b0010
+rarb 2
+--!
+xor-ba
+rarb 244
+--!
+or*-mba
+from-mba
+b __GAME_LOOP_food_spawn_shift_cont_skip
+--!
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+__GAME_LOOP_food_spawn_shift_cont_skip: nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+bnez GAME_LOOP_food_spawn_shift ------------ BRANCH_TO: GAME_LOOP_food_spawn_shift
+--!
+acc 0b1100 -- wrap back to 192
+rarb 3
+--!
+to-mba
+acc 0b0000
+rarb 2
+--!
+to-mba
+nop
+nop
+nop
+nop
+nop
+nop
+b GAME_LOOP_food_spawn_shift ------------ BRANCH_TO: GAME_LOOP_food_spawn_shift
+--!
 
 
 
@@ -1451,8 +2119,8 @@ and*-mba -- set upper nibble upper two bits to 1 (since 192-241 are all 11XX)
 .byte 0x01  -- snake-tail address MASK = 0b0001
 .byte 0x0e  ---- queue-tail address (lower nibble)
 .byte 0x00  -- queue-tail address (upper nibble)
-.byte 0x04  ---- queue (0b1000 = right)
-.byte 0x04  ---- queue (0b1000 = right)
+.byte 0x08  ---- queue (0b1000 = right)
+.byte 0x08  ---- queue (0b1000 = right)
 .byte 0x00
 
 -- 16-31
@@ -1739,7 +2407,6 @@ and*-mba -- set upper nibble upper two bits to 1 (since 192-241 are all 11XX)
     -- 244: temp storage for add/sub-mba/other
     -- 245: address2 (lower nibble) for over/underflows
     -- 246: address2 (upper nibble) for over/underflows
--- 250-252: food spawn RNG (ID, MASK)
 -- 253: direction
 -- 254: score
 -- 255: food-ate

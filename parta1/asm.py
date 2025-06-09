@@ -1,7 +1,9 @@
 from sys import argv
-from assembler.asm_instructions import instruction_map
+from sys import path as sys_path
+sys_path.append("..")
+from asm_instructions import instruction_map
 from shared import utils
-from emulator.disassembler import instr_branch_imm
+from parta2.disassembler import instr_branch_imm
 
 INPUT_PATH = argv[1]
 OUTPUT_PATH = "out.asm"
@@ -111,7 +113,10 @@ for tokens in pending_tokens:
         _encode_instruction(tokens)
 
 
-bin_or_hex = argv[2]
+if len(argv) < 2:
+    bin_or_hex = "bin"
+else:
+    bin_or_hex = argv[2]
 assert bin_or_hex in ("bin", "hex")
 
 def _is_byte(line):

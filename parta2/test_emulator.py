@@ -1,3 +1,5 @@
+from sys import path as sys_path
+sys_path.append("..")
 import sys
 import os
 import pytest
