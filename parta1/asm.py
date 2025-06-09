@@ -50,6 +50,8 @@ def _record_tokens(tokens: list[str], address: int, label: str | None):
             else:
                 if op in label_address:
                     tokens[i] = (label_address[op], True)
+                    # if not ((instr in ["b", "call"] and label_address[op] & 0b1111 == address & 0b1111) or (instr not in ["b", "call"] and label_address[op] & 0b11111 == address & 0b11111)):
+                    #     print("FAIL", instr, address, tokens)
 
                 # (If it's not a real target label it's fine)
                 else:
@@ -63,6 +65,8 @@ def _record_tokens(tokens: list[str], address: int, label: str | None):
             while len(pending_labels[label]) > 0:
                 (other_tokens, i, other_address) = pending_labels[label].pop()
                 other_tokens[i] = (address, True)
+                # if not ((other_tokens[0] in ["b", "call"] and label_address[label] & 0b1111 == other_address & 0b1111) or (other_tokens[0] not in ["b", "call"] and label_address[label] & 0b11111 == other_address & 0b11111)):
+                #     print("FAIL", other_address, other_tokens)
     
     pending_tokens.append(tokens)
 

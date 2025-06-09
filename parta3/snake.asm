@@ -170,11 +170,11 @@ rcrd 243
 --!
 from-mdc
 to-reg 1
+acc 0
 addc-mba -- add any possible overflows
 to-mba
 r4 0
 --!
-nop
 nop
 nop
 nop
@@ -468,11 +468,11 @@ rcrd 243
 --!
 from-mdc
 to-reg 1
+acc 0
 addc-mba -- add any possible underflows
 to-mba
 r4 2
 --!
-nop
 nop
 nop
 nop
@@ -1613,6 +1613,7 @@ rarb 0
 clr-cf
 add-mba
 to-mba
+acc 0
 rarb 1
 --!
 addc-mba
@@ -1623,6 +1624,7 @@ rarb 11
 clr-cf
 add-mba
 to-mba
+acc 0
 rarb 12
 --!
 addc-mba
@@ -1647,8 +1649,6 @@ nop
 nop
 nop
 __GAME_LOOP_food_ate_skip: nop
-nop
-nop
 nop
 nop
 nop
@@ -1731,30 +1731,30 @@ nop
 GAME_LOOP_food_spawn: rarb 253 ------------ BRANCH: GAME_LOOP_food_spawn
 --! -- spawn new food (final operation yay!!! >_<)
 from-mba -- dir
-rarb 2 -- add to RNG
+rarb 250 -- add to RNG
 --!
 add-mba
 to-mba
-rarb 3 -- add to RNG
+rarb 251 -- add to RNG
 --!
 add-mba
 to-mba
-rarb 4 -- add to RNG
+rarb 252 -- add to RNG
 --!
 add-mba
 to-mba
 rarb 254 -- score
 --!
 from-mba
-rarb 2 -- add to RNG
+rarb 250 -- add to RNG
 --!
 add-mba
 to-mba
-rarb 3 -- add to RNG
+rarb 251 -- add to RNG
 --!
 add-mba
 to-mba
-rarb 4 -- add to RNG
+rarb 252 -- add to RNG
 --!
 add-mba
 add-mba
@@ -1763,15 +1763,15 @@ to-mba
 rarb 5 -- snake-head (lower nibble)
 --!
 from-mba
-rarb 2 -- add to RNG
+rarb 250 -- add to RNG
 --!
 add-mba
 to-mba
-rarb 3 -- add to RNG
+rarb 251 -- add to RNG
 --!
 add-mba
 to-mba
-rarb 4 -- add to RNG
+rarb 252 -- add to RNG
 --!
 add-mba
 add-mba
@@ -1780,15 +1780,15 @@ to-mba
 rarb 6 -- snake-head (upper nibble)
 --!
 from-mba
-rarb 2 -- add to RNG
+rarb 250 -- add to RNG
 --!
 add-mba
 to-mba
-rarb 3 -- add to RNG
+rarb 251 -- add to RNG
 --!
 add-mba
 to-mba
-rarb 4 -- add to RNG
+rarb 252 -- add to RNG
 --!
 add-mba
 add-mba
@@ -1797,15 +1797,15 @@ to-mba
 rarb 7 -- snake-head (mask)
 --!
 from-mba
-rarb 2 -- add to RNG
+rarb 250 -- add to RNG
 --!
 add-mba
 to-mba
-rarb 3 -- add to RNG
+rarb 251 -- add to RNG
 --!
 add-mba
 to-mba
-rarb 4 -- add to RNG
+rarb 252 -- add to RNG
 --!
 add-mba
 add-mba
@@ -1944,7 +1944,7 @@ nop
 nop
 nop
 nop
-GAME_LOOP_food_spawn_upper: rarb 3 ------------ BRANCH: GAME_LOOP_food_spawn_upper
+GAME_LOOP_food_spawn_upper: rarb 251 ------------ BRANCH: GAME_LOOP_food_spawn_upper
 --! -- set upper nibble upper two bits to 1 (since 192-241 are all 11XX)
 acc 0b1100
 or*-mba
@@ -1952,7 +1952,7 @@ acc 0b1111 -- if upper is 0b1111 then dont allow lower nibble > 0b0001
 xor-ba
 bnez GAME_LOOP_food_spawn_shift ------------ BRANCH_TO: GAME_LOOP_food_spawn_shift
 --!
-rarb 2 -- cancel upper 3 bits of lower nibble
+rarb 250 -- cancel upper 3 bits of lower nibble
 --!
 acc 0b0001
 and*-mba
@@ -1982,22 +1982,38 @@ nop
 nop
 nop
 nop
-GAME_LOOP_food_spawn_shift: rcrd 2 ------------ BRANCH: GAME_LOOP_food_spawn_shift
+GAME_LOOP_food_spawn_shift: rcrd 250 ------------ BRANCH: GAME_LOOP_food_spawn_shift
 --! -- get food ID
 from-mdc
 to-reg 0
-rcrd 3
+rcrd 251
 --!
 from-mdc
 to-reg 1
-rcrd 4 -- get mask
+rcrd 252 -- get mask
 --!
 from-mdc
 and-ba -- check if occupied
 bnez GAME_LOOP_food_spawn_shift_cont ------------ BRANCH_TO: GAME_LOOP_food_spawn_shift
 --!
-nop
-nop
+rarb 250 -- finally store into actual food CELL memory
+--!
+from-mba
+rarb 2
+--!
+to-mba
+rarb 251
+--!
+from-mba
+rarb 3
+--!
+to-mba
+rarb 252
+--!
+from-mba
+rarb 4
+--!
+to-mba
 b GAME_LOOP ------------ BRANCH_TO: GAME_LOOP
 --!
 nop
@@ -2010,25 +2026,9 @@ nop
 nop
 nop
 nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
-nop
 GAME_LOOP_food_spawn_shift_cont: r4 0b1000 ------------ BRANCH: GAME_LOOP_food_spawn_shift_cont
 --!
-rarb 2
+rarb 250
 --!
 nop
 nop
@@ -2039,14 +2039,14 @@ rarb 244
 --!
 to-mba
 acc 0b1111 -- possible wrap (>241)
-rarb 3
+rarb 251
 --!
 xor-ba
 rarb 244
 --!
 or*-mba
 acc 0b0010
-rarb 2
+rarb 250
 --!
 xor-ba
 rarb 244
@@ -2081,11 +2081,11 @@ nop
 bnez GAME_LOOP_food_spawn_shift ------------ BRANCH_TO: GAME_LOOP_food_spawn_shift
 --!
 acc 0b1100 -- wrap back to 192
-rarb 3
+rarb 251
 --!
 to-mba
 acc 0b0000
-rarb 2
+rarb 250
 --!
 to-mba
 nop
@@ -2395,7 +2395,7 @@ b GAME_LOOP_food_spawn_shift ------------ BRANCH_TO: GAME_LOOP_food_spawn_shift
 
 -- 0: length (lower nibble)
 -- 1: length (upper nibble)
--- 2-4: food-CELL       (ID (8-bits), MASK (4-bits))
+-- 2-4: food CELL       (ID (8-bits), MASK (4-bits))
 -- 5-7: snake-head CELL (ID (8-bits), MASK (4-bits))
 -- 8-10: snake-tail CELL (ID (8-bits), MASK (4-bits))
 -- 11-12: queue tail address
@@ -2407,6 +2407,7 @@ b GAME_LOOP_food_spawn_shift ------------ BRANCH_TO: GAME_LOOP_food_spawn_shift
     -- 244: temp storage for add/sub-mba/other
     -- 245: address2 (lower nibble) for over/underflows
     -- 246: address2 (upper nibble) for over/underflows
+-- 250-252: temporary food CELL mirror (RNG)
 -- 253: direction
 -- 254: score
 -- 255: food-ate

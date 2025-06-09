@@ -106,16 +106,16 @@ class EmulatorInstructions:
             self.cpu.RegFile['CF'] = self._underflow(result)
 
         elif self.cpu.instr.dec == 0b00001100: # 13. inc*-mba
-            self._writeL4(self.cpu.RBRA, self._readL4(self.cpu.RBRA) + 1)
+            self.cpu.DataMem.mem[self.cpu.RBRA] += 1
         
         elif self.cpu.instr.dec == 0b00001101: # 14. dec*-mba
-            self._writeL4(self.cpu.RBRA, self._readL4(self.cpu.RBRA) - 1)
+            self.cpu.DataMem.mem[self.cpu.RBRA] -= 1
 
         elif self.cpu.instr.dec == 0b00001110: # 15. inc*-mdc
-            self._writeL4(self.cpu.RDRC, self._readL4(self.cpu.RDRC) + 1)
+            self.cpu.DataMem.mem[self.cpu.RDRC] += 1
         
         elif self.cpu.instr.dec == 0b00001111: # 16. dec*-mdc
-            self._writeL4(self.cpu.RDRC, self._readL4(self.cpu.RDRC) - 1)
+            self.cpu.DataMem.mem[self.cpu.RDRC] -= 1
         
         self.cpu.PC += 1
 
@@ -343,10 +343,10 @@ class EmulatorInstructions:
         tag = self.cpu.instr.bin[4]
 
         if (self.cpu.RegFile['CF'] == 0 and tag == '0'): # 73. beqz-cf <self.cpu.IMM>
-            lowerPC = self.cpu.PC & utils.HEX_16U5
+            lowerPC = self.cpu.PC & utils.HEX_16L5
             self.cpu.PC = lowerPC | self.cpu.IMM
         elif (self.cpu.RegFile['CF'] != 0 and tag == '1'): # 74. bnez-cf <self.cpu.IMM>
-            lowerPC = self.cpu.PC & utils.HEX_16U5
+            lowerPC = self.cpu.PC & utils.HEX_16L5
             self.cpu.PC = lowerPC | self.cpu.IMM
         else:
             self.cpu.PC += 2
@@ -366,7 +366,7 @@ class EmulatorInstructions:
 
     # instructions 77  -> 77. b <imm>
     def _type14(self):
-        # upperPC = self.cpu.PC & utils.HEX_16U4         
+        # upperPC = self.cpu.PC & utils.HEX_16L4         
         # self.cpu.IMM = int(utils.to_strbin(self.cpu.instr.bin[4:]), 2)  
         # self.cpu.PC = upperPC | self.cpu.IMM  
         lowerPC = self.cpu.PC & utils.HEX_16L4

@@ -100,27 +100,22 @@ class Pyxel:
     # MEM[ID] | MEM[4] if 0 -> OFF
     
     def _write_cell(self):
+        food_addr = (self.emulator.DataMem.mem[3] << 4) | self.emulator.DataMem.mem[2]
         for mem_addr in range(192, 242):
             val = self.emulator.DataMem.mem[mem_addr]
             row = (mem_addr-192)//5
             col_start = (mem_addr-192) % 5
             for i in range(4):
                 # checks if polled mem addr is the food address 
-                food_addr = (self.emulator.DataMem.mem[3] << 4) |  self.emulator.DataMem.mem[2]
                 col = col_start*4 + i
 
                 if (food_addr == mem_addr and self.emulator.DataMem.mem[4] == (1 << i)):
-                    # if spawn random food [ON]:
-                    self.emulator.DataMem.mem[food_addr] |= self.emulator.DataMem.mem[4]
-                    self.led_matrix[row][col].state = 2 # apple 
-                    # elif food is eaten [OFF]
-                    self.emulator.DataMem.mem[food_addr] &= not self.emulator.DataMem.mem[4]
-                    self.led_matrix[row][col].state = 0 # apple eat return to off led
+                    self.led_matrix[row][col].state = 2 # apple
 
                 else: # lit up snake body
                     state = val & 1 
                     self.led_matrix[row][col].state = state # 1 light up
-                    val >>= 1
+                val >>= 1
                     
                   
         """Pseudo
@@ -299,6 +294,18 @@ class Arch242Emulator: # CPU
             self.decode()
             self.execute()
         self.clock_cycle += 1
+
+        # x = (int(bin(self.DataMem.mem[3])[2:], 2) << 4) | int(bin(self.DataMem.mem[2])[2:], 2)
+        # print(f"FOOD: {x}, {bin(self.DataMem.mem[4])[2:]}")
+        # x = (int(bin(self.DataMem.mem[6])[2:], 2) << 4) | int(bin(self.DataMem.mem[5])[2:], 2)
+        # print(f"SNAKE-HEAD: {x}, {bin(self.DataMem.mem[7])[2:]}")
+        # x = (int(bin(self.DataMem.mem[9])[2:], 2) << 4) | int(bin(self.DataMem.mem[8])[2:], 2)
+        # print(f"SNAKE-TAIL: {x}, {bin(self.DataMem.mem[10])[2:]}")
+        # x = (int(bin(self.DataMem.mem[12])[2:], 2) << 4) | int(bin(self.DataMem.mem[11])[2:], 2)
+        # print(f"QUEUE-TAIL ADDRESS: {x}")
+        # x = (int(bin(self.DataMem.mem[12])[2:], 2) << 4) | int(bin(self.DataMem.mem[11])[2:], 2)
+        # print(f"FOOD-ATE: {self.DataMem.mem[255]}")
+        # print(f"QUEUE: {[bin(self.DataMem.mem[x])[2:] for x in range(13, 20)]}")
         return
     
     def load_instructions(self) -> None:
