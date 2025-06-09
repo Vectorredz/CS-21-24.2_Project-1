@@ -91,24 +91,47 @@ class Pyxel:
     # matrix[row][col].state = 1 ---> led on (snake)
     # matrix[row][col].state = 2 ---> food cell
     
+    # food address is from 2-4
+    # ID = MEM[3] << 4 | MEM[2] -> some address
+    # MEM[ID] = contains 4-bits (e.g. 0b1000) -> row [ID] col 3 (zero-based)
+    # MEM[ID] | MEM[4] if 1 -> ON
+    # MEM[ID] | MEM[4] if 0 -> OFF
+    
     def _write_cell(self):
         for mem_addr in range(192, 242):
             val = self.emulator.DataMem.mem[mem_addr]
             row = (mem_addr-192)//5
             col_start = (mem_addr-192) % 5
             for i in range(4):
+                # checks if polled mem addr is the food address 
+                food_addr = (self.emulator.DataMem.mem[3] << 4) |  self.emulator.DataMem.mem[2]
                 col = col_start*4 + i
-                state = val & 1 
-                self.led_matrix[row][col].state = state
-                val >>= 1
-                
-        # --- Food block from memory address 218
-        food_pos = self.emulator.DataMem.mem[218]
-        food_row = food_pos // 20
-        food_col = food_pos % 20
-        
 
-        self.led_matrix[food_row][food_col].state = 2
+                if (food_addr == mem_addr and self.emulator.DataMem.mem[4] == (1 << i)):
+                    # if spawn random food [ON]:
+                    self.emulator.DataMem.mem[food_addr] |= self.emulator.DataMem.mem[4]
+                    self.led_matrix[row][col].state = 2 # apple 
+                    # elif food is eaten [OFF]
+                    self.emulator.DataMem.mem[food_addr] &= not self.emulator.DataMem.mem[4]
+                    self.led_matrix[row][col].state = 0 # apple eat return to off led
+
+                else: # lit up snake body
+                    state = val & 1 
+                    self.led_matrix[row][col].state = state # 1 light up
+                    val >>= 1
+                    
+                  
+        """Pseudo
+        Polls the mem_addr in the game grid if the random rng program sets it as a food block
+        
+        for mem_addr in range(192, 242):
+            if (self.emulator.DataMem.mem[3] << 4) |  self.emulator.DataMem.mem[2] == mem_addr
+
+            self.emulator.DataMem.mem[mem_addr]
+        
+        """
+
+        # self.led_matrix[food_row][food_col].state = 2
         
 
     def print_matrix(self):

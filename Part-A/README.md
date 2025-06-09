@@ -2,13 +2,13 @@
 
 ## Preface
 
-The implementation is developed by a group of 4 CS-21 students, namely, **Glenn Paragas, Louise Gabriel Vilar, Luis Antonio Sarmiento,** and **Ethan Renell Mislang.**
+The implementation is developed by a group of (4) CS-21 students, namely, **Glenn Paragas, Louise Gabriel Vilar, Luis Antonio Sarmiento,** and **Ethan Renell Mislang.**
 
 The specifications can be found in this [Mkdocs Page](https://cs21.upd-dcs.work/labs/project/#arch-242-architecture-overview)
 
 ## Contributions
 
-### Part A: Arch-242 assembler + emulator + Snake Game
+### Part A: Arch-242 Assembler + Emulator + Snake Game
 
 #### Part A1
 - PARAGAS, Glenn 
@@ -27,7 +27,6 @@ The specifications can be found in this [Mkdocs Page](https://cs21.upd-dcs.work/
 - SARMIENTO, Luis Antonio
 - MISLANG, Ethan Renell 
 
-
 ## Instruction A1
 
 ### Arch-242 Assembler Guide
@@ -40,7 +39,6 @@ The assembler directory contains the following utilities for the assembler:
 
 - `__init__.py` – Initializes the assembler package
 - `asm_instructions.py` - Contains the decorators for assembling each arch-242 instructions
-- `blabes.py` 
 
 ### How to Run
 
@@ -66,14 +64,14 @@ Welcome to the **Arch-242 Instruction Set Architecture**! This guide walks you t
 
 The assembler directory contains the following utilities for the assembler:
 
-- "__init__.py"
-- "disassembler.pyy"
-- "emu_instructions.py"
-- "test_emulator.py"
+- `__init__.py`- Initializes the emulator package
+- `disassembler.py` - Disassembles the assembled Arch-242 instruction assembly code
+- `emu_instructions.py`- Contains the disassmbled instruction from arch242
+- `test_emulator.py` - Simple unittesting file using pytest
 
 ### How to Run
 
-In order to run the correct assembled program using the emulator we must use the assembler first ---> read the "Instruction_A1.md" for steps
+In order to run the snake game using the emulator we must first run the assembler to get the assembled Arch-242 program.
 
 Run the `snake.asm` first using the assembler to get the assembled code 
 
@@ -90,9 +88,9 @@ python emulator.py Arch242_output.asm
 ```
 ### Navigating Through The Arch242 Emulator Pyxel Window
 
-Once the command ran succesfully a `Pyxel` window will abruptly shows up in the screen. The `Pyxel` window represents the Snake Game.\
+Once the command ran succesfully a `Pyxel` window will abruptly shows up in the screen. The `Pyxel` window represents the Snake Game.
 
-Snake Game is a pyxel-based snake game that is encoded using the custom Arch 242 instruction set. The game screen includes the following:
+Snake Game is a pyxel-based snake game that is encoded using the custom Arch-242 instruction set. The game screen includes the following:
 - **Game HUD:** Displays the instruction on how to play, accumulated score, LED currently on and LED currently off.
 - **Benchmark:** Displays the current status of the Arch242 CPU Emulator. It includes: current fetched instruction (in bin and assembly), program counter `(PC)` and register values `(RA, RB, RC, RD, RE, ACC, CF, TEMP)` at the current cycle.  
 - **Game Grid:** Displays an LED matrix of 10 rows x 20 columns. This actually displays the `snake` the `player` will play as.
